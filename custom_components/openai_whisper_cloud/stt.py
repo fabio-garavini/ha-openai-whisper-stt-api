@@ -25,7 +25,13 @@ from homeassistant.const import CONF_API_KEY, CONF_MODEL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import CONF_PROMPT, CONF_TEMPERATURE, SUPPORT_LANGUAGES
+from .const import (
+    CONF_PROMPT,
+    CONF_TEMPERATURE,
+    DEFAULT_PROMPT,
+    DEFAULT_TEMPERATURE,
+    SUPPORT_LANGUAGES,
+)
 
 
 async def async_setup_entry(
@@ -34,24 +40,25 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up speech platform via config entry."""
-    async_add_entities([OpenAIWhisperCloudEntity(hass, config_entry)])
+    async_add_entities([OpenAIWhisperCloudEntity(config_entry)])
 
 
 class OpenAIWhisperCloudEntity(SpeechToTextEntity):
     """OpenAI Whisper API provider entity."""
 
-    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry) -> None:
+    def __init__(self, config_entry: ConfigEntry) -> None:
         """Init STT service."""
-        self.api_key = config_entry.data[CONF_API_KEY]
-        self.model = config_entry.data[CONF_MODEL]
-        self.temperature = config_entry.data[CONF_TEMPERATURE]
-        self.prompt = (
-            config_entry.data.get(CONF_PROMPT)
-            if config_entry.data.get(CONF_PROMPT) is not None
-            else ""
-        )
+        self.api_key = config_entry.data.get(CONF_API_KEY)
+        self.model = config_entry.data.get(CONF_MODEL)
+        self.temperature = config_entry.data.get(CONF_TEMPERATURE)
+        self.prompt = config_entry.data.get(CONF_PROMPT)
         self._attr_name = "Whisper Cloud STT"
         self._attr_unique_id = config_entry.entry_id
+
+        if self.temperature is None:
+            self.temperature = DEFAULT_TEMPERATURE
+        if self.prompt is None:
+            self.prompt = DEFAULT_PROMPT
 
     @property
     def supported_languages(self) -> list[str]:

@@ -1,0 +1,5 @@
+{
+    "name": "OpenAI Whisper Cloud",
+    "render_readme": true,
+    "homeassistant": "2023.5.0"
+  }

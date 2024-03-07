@@ -7,7 +7,10 @@ This is a custom integration for using OpenAI cloud speech-to-text API in the As
 
 ## How to install
 ### HACS
-Add this repository to your HACS repositories and then search and install the `OpenAI Whisper Cloud` integration
+Add [this](https://github.com/fabio-garavini/ha-openai-whisper-stt-api) repository to your HACS repositories and then search and install the `OpenAI Whisper Cloud` integration
+```
+https://github.com/fabio-garavini/ha-openai-whisper-stt-api
+```
 
 ### Manual
 Download this repository and copy everything inside the `custom_components` folder inside your Home Assistant's `custom_components` folder.
@@ -16,8 +19,8 @@ Download this repository and copy everything inside the `custom_components` fold
 
 - `api_key`: (Required) OpenAI api key
 - `model`: (Required) At the moment the only model available is `whisper-1`
-- `temperature`: (Optional) Sampling temperature between 0 and 1
-- `prompt`: (Optional) Used to guide the model's style
+- `temperature`: (Optional) Sampling temperature between 0 and 1. Default `0`
+- `prompt`: (Optional) Used to guide the model's style. Default ` `
 
 ### HA Interface
 Add the integration from the Devices & services page

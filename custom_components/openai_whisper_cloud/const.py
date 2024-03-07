@@ -6,6 +6,12 @@ CONF_PROMPT = "prompt"
 CONF_TEMPERATURE = "temperature"
 
 DEFAULT_WHISPER_MODEL = "whisper-1"
+DEFAULT_PROMPT = ""
+DEFAULT_TEMPERATURE = 0
+
+SUPPORT_MODELS = [
+    "whisper-1"
+]
 
 SUPPORT_LANGUAGES = [
     "af",
