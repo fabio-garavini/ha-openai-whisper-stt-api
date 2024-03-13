@@ -1,6 +1,6 @@
 # OpenAI Whisper STT Cloud API integration for Home Assistant 🏠🎙️
 
-This is a custom integration for using OpenAI cloud speech-to-text API in the Assist pipeline. Reducing the workload on the Home Assistant server.
+This is a custom integration for using OpenAI cloud speech-to-text API in the Assist pipeline, reducing the workload on the Home Assistant server.
 
 ## Requirements 📖
 
@@ -19,7 +19,7 @@ Before configuring the integration you must first install the `custom_integratio
 
       [![Add Repository to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=fabio-garavini&repository=ha-openai-whisper-stt-api&category=integration)
 
-    - Or **copy** this url ⤵️ and paste into you HACS custom repostories
+    - Or **copy** this url ⤵️ and paste into your HACS custom repostories
 
       ```
       https://github.com/fabio-garavini/ha-openai-whisper-stt-api
