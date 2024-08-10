@@ -6,6 +6,9 @@ import logging
 import os
 import tempfile
 import wave
+import io
+import asyncio
+import requests
 
 import openai
 
@@ -113,37 +116,53 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
             return SpeechResult("", SpeechResultState.ERROR)
 
         try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
-                with wave.open(temp_file, "wb") as wav_file:
-                    wav_file.setnchannels(metadata.channel)
-                    wav_file.setframerate(metadata.sample_rate)
-                    wav_file.setsampwidth(2)
-                    wav_file.writeframes(data)
-                temp_file_path = temp_file.name
+            temp_file = io.BytesIO()
+            with wave.open(temp_file, "wb") as wav_file:
+                wav_file.setnchannels(metadata.channel)
+                wav_file.setframerate(metadata.sample_rate)
+                wav_file.setsampwidth(2)
+                wav_file.writeframes(data)
 
-            audio_file = open(temp_file_path, "rb")
+            # Ensure the buffer is at the start before passing it
+            temp_file.seek(0)
 
-            openai_client = openai.Client(api_key=self.api_key)
+            # Prepare the files parameter with a proper filename
+            files = {
+                'file': ('audio.wav', temp_file, 'audio/wav'),
+            }
 
-            transcription = openai_client.audio.transcriptions.create(
-                file=audio_file,
-                model=self.model,
-                language=metadata.language,
-                temperature=self.temperature,
-                prompt=self.prompt,
+            # Prepare the data payload
+            data = {
+                'model': self.model,
+                'language': metadata.language,
+                'temperature': self.temperature,
+                'prompt': self.prompt,
+            }
+
+            # Make the request in a separate thread
+            response = await asyncio.to_thread(
+                requests.post,
+                'https://api.openai.com/v1/audio/transcriptions',
+                headers={
+                    'Authorization': f'Bearer {self.api_key}',
+                },
+                files=files,
+                data=data,
             )
+
+            # Parse the JSON response
+            transcription = response.json()
 
             logging.debug(transcription)
 
-            if transcription.text is not None:
-                return SpeechResult(transcription.text, SpeechResultState.SUCCESS)
+            # Retrieve the transcribed text
+            transcribed_text = transcription.get('text', '')
+
+            if transcribed_text is not None:
+                return SpeechResult(transcribed_text, SpeechResultState.SUCCESS)
             else:
                 return SpeechResult("", SpeechResultState.ERROR)
 
         except Exception as e:
             logging.error(e)
             return SpeechResult("", SpeechResultState.ERROR)
-        finally:
-            audio_file.close()
-            if temp_file_path:
-                os.remove(temp_file_path)
