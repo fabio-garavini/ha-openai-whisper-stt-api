@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterable
 import logging
-import os
-import tempfile
 import wave
 import io
 import asyncio
