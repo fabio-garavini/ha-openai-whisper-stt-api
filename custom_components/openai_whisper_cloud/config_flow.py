@@ -43,10 +43,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def validate_input(data: dict):
-    """Validate the user input allows us to connect.
-
-    Data has the keys from DATA_SCHEMA with values provided by the user.
-    """
+    """Validate the user input."""
 
     if data.get(CONF_TEMPERATURE) is None:
         data[CONF_TEMPERATURE] = DEFAULT_TEMPERATURE
@@ -78,7 +75,7 @@ async def validate_input(data: dict):
 
 
 class ConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for OpenAI Whisper Cloud."""
+    """Handle UI config flow."""
 
     VERSION = 1
     MINOR_VERSION = 0
@@ -88,7 +85,7 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
         user_input: dict[str, Any] | None = None,
         errors: dict[str, str] | None = None,
     ) -> ConfigFlowResult:
-        """Handle the initial step."""
+        """Handle initial step."""
         errors = {}
         if user_input is not None:
             try:
@@ -116,16 +113,16 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class UnknownError(exceptions.HomeAssistantError):
-    """Error to indicate we cannot connect."""
+    """Unknown error."""
 
 
 class UnauthorizedError(exceptions.HomeAssistantError):
-    """Error to indicate there is an invalid api_key."""
+    """API key valid but doesn't have the rights to use Whisper."""
 
 
 class InvalidAPIKey(exceptions.HomeAssistantError):
-    """Error to indicate there is an invalid api_key."""
+    """Invalid api_key error."""
 
 
 class WhisperModelBlocked(exceptions.HomeAssistantError):
-    """Error to indicate there is an invalid api_key."""
+    """Whisper not found in the available OpenAI models."""

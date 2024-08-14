@@ -1,4 +1,4 @@
-"""Support for OpenAI Whisper API speech-to-text service."""
+"""OpenAI Whisper API speech-to-text entity."""
 
 from __future__ import annotations
 
