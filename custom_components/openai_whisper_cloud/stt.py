@@ -8,8 +8,6 @@ import io
 import asyncio
 import requests
 
-import openai
-
 from homeassistant.components.stt import (
     AudioBitRates,
     AudioChannels,
