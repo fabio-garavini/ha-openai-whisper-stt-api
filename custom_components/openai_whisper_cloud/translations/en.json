@@ -4,17 +4,18 @@
             "already_configured": "Device is already configured"
         },
         "error": {
-            "cannot_connect": "Failed to connect",
-            "invalid_auth": "Invalid authentication",
-            "unknown": "Unexpected error"
+            "invalid_api_key": "Invalid API Key",
+            "unauthorized": "Make sure your api key has READ permission to 'Models' and WRITE permission to 'Model capabilities'",
+            "whisper_blocked":  "Whisper is blocked on your OpenAI project"
         },
         "step": {
             "user": {
                 "data": {
+                    "name": "Name",
                     "api_key": "API key",
                     "model": "Model",
-                    "temperature": "Temperature",
-                    "prompt": "Prompt"
+                    "prompt": "Prompt",
+                    "temperature": "Temperature"
                 }
             }
         }

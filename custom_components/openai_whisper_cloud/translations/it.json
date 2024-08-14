@@ -1,0 +1,23 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Dispositivo gia' configurato"
+        },
+        "error": {
+            "invalid_api_key": "Chiave API non valida",
+            "unauthorized": "Assicurati che la tua chiave api abbia i permessi di READ su 'Models' e di WRITE su 'Model capabilities'",
+            "whisper_blocked":  "Whisper e' bloccato sul tuo Progetto OpenAI"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "name": "Nome",
+                    "api_key": "Chiave API",
+                    "model": "Modello",
+                    "prompt": "Prompt",
+                    "temperature": "Temperatura"
+                }
+            }
+        }
+    }
+}
