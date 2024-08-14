@@ -41,9 +41,9 @@ These are the parameters that you can configure:
 - `api_key`: (Required) OpenAI api key
 - `model`: (Required) At the moment the only model available is `whisper-1`
 - `temperature`: (Optional) Sampling temperature between 0 and 1. Default `0`
-- `prompt`: (Optional) Used to guide the model's style. Default `' '`
+- `prompt`: (Optional) Used to guide the model's style. Default `""`
 
-Now you can set it up through your Home Assistant Dashboard or manually.
+Now you can set it up through your Home Assistant Dashboard (YAML configuration not supported).
 
 ### Home Assistant Dashboard 💻
 
@@ -52,18 +52,3 @@ Now you can set it up through your Home Assistant Dashboard or manually.
   [![Add Repository to HACS](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=openai_whisper_cloud)
 
 - Or navigate to your `Devices & services` page and click `+ Add Integration`
-
-### Manual Configuration ⌨️
-
-- **Add** this in your `configuration.yaml`:
-
-  ```yaml
-  stt:
-    - platform: openai_whisper_cloud
-      api_key: <your-api-key>
-      model: "whisper-1"
-      temperature: 0
-      prompt: ""
-  ```
-
-- **Restart** Home Assistant
