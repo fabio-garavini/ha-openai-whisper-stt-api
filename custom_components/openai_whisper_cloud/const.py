@@ -5,15 +5,11 @@ DOMAIN = "openai_whisper_cloud"
 CONF_PROMPT = "prompt"
 CONF_TEMPERATURE = "temperature"
 
-DEFAULT_WHISPER_MODEL = "whisper-1"
-DEFAULT_PROMPT = ""
-DEFAULT_TEMPERATURE = 0
-
-SUPPORT_MODELS = [
+SUPPORTED_MODELS = [
     "whisper-1"
 ]
 
-SUPPORT_LANGUAGES = [
+SUPPORTED_LANGUAGES = [
     "af",
     "ar",
     "hy",
@@ -72,3 +68,8 @@ SUPPORT_LANGUAGES = [
     "vi",
     "cy"
 ]
+
+DEFAULT_NAME = "OpenAI Whisper"
+DEFAULT_WHISPER_MODEL = SUPPORTED_MODELS[0]
+DEFAULT_PROMPT = ""
+DEFAULT_TEMPERATURE = 0

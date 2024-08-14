@@ -1,11 +1,13 @@
 """Support for OpenAI Whisper API speech-to-text service."""
+
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterable
+import io
 import logging
 import wave
-import io
-import asyncio
+
 import requests
 
 from homeassistant.components.stt import (
@@ -20,17 +22,12 @@ from homeassistant.components.stt import (
     SpeechToTextEntity,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_API_KEY, CONF_MODEL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import (
-    CONF_PROMPT,
-    CONF_TEMPERATURE,
-    DEFAULT_PROMPT,
-    DEFAULT_TEMPERATURE,
-    SUPPORT_LANGUAGES,
-)
+from .const import SUPPORTED_LANGUAGES
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -38,31 +35,33 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up speech platform via config entry."""
-    async_add_entities([OpenAIWhisperCloudEntity(config_entry)])
+    """Set up Demo speech platform via config entry."""
+    async_add_entities(
+        [OpenAIWhisperCloudEntity(**config_entry.data, unique_id=config_entry.entry_id)]
+    )
 
 
 class OpenAIWhisperCloudEntity(SpeechToTextEntity):
     """OpenAI Whisper API provider entity."""
 
-    def __init__(self, config_entry: ConfigEntry) -> None:
+    def __init__(self, api_key, model, temperature, prompt, name, unique_id) -> None:
         """Init STT service."""
-        self.api_key = config_entry.data.get(CONF_API_KEY)
-        self.model = config_entry.data.get(CONF_MODEL)
-        self.temperature = config_entry.data.get(CONF_TEMPERATURE)
-        self.prompt = config_entry.data.get(CONF_PROMPT)
-        self._attr_name = "Whisper Cloud STT"
-        self._attr_unique_id = config_entry.entry_id
+        self.api_key = api_key
+        self.model = model
+        self.temperature = temperature
+        self.prompt = prompt
+        self._attr_name = name
+        self._attr_unique_id = unique_id
 
-        if self.temperature is None:
-            self.temperature = DEFAULT_TEMPERATURE
-        if self.prompt is None:
-            self.prompt = DEFAULT_PROMPT
+    @property
+    def default_language(self) -> str:
+        """Return the default language."""
+        return "en"
 
     @property
     def supported_languages(self) -> list[str]:
         """Return a list of supported languages."""
-        return SUPPORT_LANGUAGES
+        return SUPPORTED_LANGUAGES
 
     @property
     def supported_formats(self) -> list[AudioFormats]:
@@ -124,23 +123,23 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
 
             # Prepare the files parameter with a proper filename
             files = {
-                'file': ('audio.wav', temp_file, 'audio/wav'),
+                "file": ("audio.wav", temp_file, "audio/wav"),
             }
 
             # Prepare the data payload
             data = {
-                'model': self.model,
-                'language': metadata.language,
-                'temperature': self.temperature,
-                'prompt': self.prompt,
+                "model": self.model,
+                "language": metadata.language,
+                "temperature": self.temperature,
+                "prompt": self.prompt,
             }
 
             # Make the request in a separate thread
             response = await asyncio.to_thread(
                 requests.post,
-                'https://api.openai.com/v1/audio/transcriptions',
+                "https://api.openai.com/v1/audio/transcriptions",
                 headers={
-                    'Authorization': f'Bearer {self.api_key}',
+                    "Authorization": f"Bearer {self.api_key}",
                 },
                 files=files,
                 data=data,
@@ -149,16 +148,16 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
             # Parse the JSON response
             transcription = response.json()
 
-            logging.debug(transcription)
+            _LOGGER.debug(transcription)
 
             # Retrieve the transcribed text
-            transcribed_text = transcription.get('text', '')
+            transcribed_text = transcription.get("text", "")
 
-            if transcribed_text is not None:
-                return SpeechResult(transcribed_text, SpeechResultState.SUCCESS)
-            else:
+            if not transcribed_text:
                 return SpeechResult("", SpeechResultState.ERROR)
 
-        except Exception as e:
-            logging.error(e)
+            return SpeechResult(transcribed_text, SpeechResultState.SUCCESS)
+
+        except requests.exceptions.RequestException as e:
+            _LOGGER.error(e)
             return SpeechResult("", SpeechResultState.ERROR)
