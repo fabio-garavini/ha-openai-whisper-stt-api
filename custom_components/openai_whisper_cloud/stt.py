@@ -36,6 +36,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Demo speech platform via config entry."""
+    _LOGGER.debug("Setup Entry %s", config_entry.entry_id)
     async_add_entities(
         [OpenAIWhisperCloudEntity(**config_entry.data, unique_id=config_entry.entry_id)]
     )
@@ -98,11 +99,14 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
     ) -> SpeechResult:
         """Process an audio stream to STT service."""
 
+        _LOGGER.debug("Processing audio stream: %s", metadata)
+
         data = b""
         async for chunk in stream:
             data += chunk
 
         if not data:
+            _LOGGER.error("No audio data received")
             return SpeechResult("", SpeechResultState.ERROR)
 
         try:
@@ -115,6 +119,8 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
 
             # Ensure the buffer is at the start before passing it
             temp_file.seek(0)
+
+            _LOGGER.debug("Temp wav audio file created")
 
             # Prepare the files parameter with a proper filename
             files = {
@@ -139,6 +145,8 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
                 files=files,
                 data=data,
             )
+
+            _LOGGER.debug("Transcription request took %f s and returned %d - %s", response.elapsed.seconds, response.status_code, response.reason)
 
             # Parse the JSON response
             transcription = response.json().get("text", "")

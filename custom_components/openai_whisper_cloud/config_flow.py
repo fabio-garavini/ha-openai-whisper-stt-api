@@ -45,6 +45,11 @@ _LOGGER = logging.getLogger(__name__)
 async def validate_input(data: dict):
     """Validate the user input."""
 
+    obscured_api_key = data.get(CONF_API_KEY)
+    data[CONF_API_KEY] = "<api_key>"
+    _LOGGER.debug("User validation got: %s", data)
+    data[CONF_API_KEY] = obscured_api_key
+
     if data.get(CONF_TEMPERATURE) is None:
         data[CONF_TEMPERATURE] = DEFAULT_TEMPERATURE
     if data.get(CONF_PROMPT) is None:
@@ -58,6 +63,8 @@ async def validate_input(data: dict):
             "Content-Type": "application/json"
         },
     )
+
+    _LOGGER.debug("Models request took %f s and returned %d - %s", response.elapsed.seconds, response.status_code, response.reason)
 
     if response.status_code == 401:
         raise InvalidAPIKey
@@ -73,6 +80,8 @@ async def validate_input(data: dict):
             break
         if model == response.json().get("data")[-1]:
             raise WhisperModelBlocked
+    
+    _LOGGER.debug("User validation successful")
 
 
 class ConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -100,12 +109,16 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                 _LOGGER.error(e)
                 errors["base"] = "connection_error"
             except UnauthorizedError:
+                _LOGGER.exception("Unauthorized")
                 errors["base"] = "unauthorized"
             except InvalidAPIKey:
+                _LOGGER.exception("Invalid API key")
                 errors[CONF_API_KEY] = "invalid_api_key"
             except WhisperModelBlocked:
+                _LOGGER.exception("Whisper Model Not Found")
                 errors["base"] = "whisper_blocked"
             except UnknownError:
+                _LOGGER.exception("Unknown error")
                 errors["base"] = "unknown"
 
         return self.async_show_form(
