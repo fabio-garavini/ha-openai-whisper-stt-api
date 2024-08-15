@@ -54,11 +54,6 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
         self._attr_unique_id = unique_id
 
     @property
-    def default_language(self) -> str:
-        """Return the default language."""
-        return "en"
-
-    @property
     def supported_languages(self) -> list[str]:
         """Return a list of supported languages."""
         return SUPPORTED_LANGUAGES
@@ -146,17 +141,15 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
             )
 
             # Parse the JSON response
-            transcription = response.json()
+            transcription = response.json().get("text", "")
 
-            _LOGGER.debug(transcription)
+            _LOGGER.debug("TRANSCRIPTION: %s", transcription)
 
-            # Retrieve the transcribed text
-            transcribed_text = transcription.get("text", "")
-
-            if not transcribed_text:
+            if not transcription:
+                _LOGGER.error("No transcription received")
                 return SpeechResult("", SpeechResultState.ERROR)
 
-            return SpeechResult(transcribed_text, SpeechResultState.SUCCESS)
+            return SpeechResult(transcription, SpeechResultState.SUCCESS)
 
         except requests.exceptions.RequestException as e:
             _LOGGER.error(e)

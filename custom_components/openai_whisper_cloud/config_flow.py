@@ -55,6 +55,7 @@ async def validate_input(data: dict):
         url="https://api.openai.com/v1/models",
         headers={
             "Authorization": f"Bearer {data.get(CONF_API_KEY)}",
+            "Content-Type": "application/json"
         },
     )
 
