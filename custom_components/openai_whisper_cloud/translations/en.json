@@ -16,8 +16,11 @@
                     "name": "Name",
                     "api_key": "API key",
                     "model": "Model",
-                    "prompt": "Prompt",
-                    "temperature": "Temperature"
+                    "temperature": "Temperature",
+                    "prompt": "Prompt"
+                },
+                "data_description": {
+                    "prompt": "Prompt can be used to improve speech recognition of words or even names. You have to provide a list of words or names separated by a comma \", \".\nExample: \"open, close, Chat GPT-3, DALL·E\""
                 }
             },
             "reconfigure": {
@@ -25,8 +28,11 @@
                     "name": "Name",
                     "api_key": "API key",
                     "model": "Model",
-                    "prompt": "Prompt",
-                    "temperature": "Temperature"
+                    "temperature": "Temperature",
+                    "prompt": "Prompt"
+                },
+                "data_description": {
+                    "prompt": "Prompt can be used to improve speech recognition of words or even names. You have to provide a list of words or names separated by a comma \", \".\nExample: \"open, close, Chat GPT-3, DALL·E\""
                 }
             }
         }

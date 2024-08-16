@@ -16,8 +16,11 @@
                     "name": "Nome",
                     "api_key": "Chiave API",
                     "model": "Modello",
-                    "prompt": "Prompt",
-                    "temperature": "Temperatura"
+                    "temperature": "Temperatura",
+                    "prompt": "Prompt"
+                },
+                "data_description": {
+                    "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: \"accendi, spegni, Chat GPT-3, DALL·E\""
                 }
             },
             "reconfigure": {
@@ -25,8 +28,11 @@
                     "name": "Nome",
                     "api_key": "Chiave API",
                     "model": "Modello",
-                    "prompt": "Prompt",
-                    "temperature": "Temperatura"
+                    "temperature": "Temperatura",
+                    "prompt": "Prompt"
+                },
+                "data_description": {
+                    "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: \"accendi, spegni, Chat GPT-3, DALL·E\""
                 }
             }
         }
