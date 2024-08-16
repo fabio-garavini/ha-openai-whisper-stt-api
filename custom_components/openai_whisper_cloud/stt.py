@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterable
 import io
-import logging
 import wave
 
 import requests
@@ -25,9 +24,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from . import _LOGGER
 from .const import SUPPORTED_LANGUAGES
-
-_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from typing import Any
 
 import requests
@@ -14,6 +13,7 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_API_KEY, CONF_MODEL, CONF_NAME
 import homeassistant.helpers.config_validation as cv
 
+from . import _LOGGER
 from .const import (
     CONF_PROMPT,
     CONF_TEMPERATURE,
@@ -38,8 +38,6 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Optional(CONF_PROMPT): cv.string,
     }
 )
-
-_LOGGER = logging.getLogger(__name__)
 
 
 async def validate_input(data: dict):
@@ -80,7 +78,7 @@ async def validate_input(data: dict):
             break
         if model == response.json().get("data")[-1]:
             raise WhisperModelBlocked
-    
+
     _LOGGER.debug("User validation successful")
 
 
@@ -102,7 +100,7 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                 await validate_input(user_input)
 
                 return self.async_create_entry(
-                    title=user_input[CONF_NAME], data=user_input
+                    title=user_input.get(CONF_NAME, DEFAULT_NAME), data=user_input
                 )
 
             except requests.exceptions.RequestException as e:
@@ -123,6 +121,54 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
+        )
+
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
+        """Handle UI reconfiguration flow."""
+
+        config_entry = self.hass.config_entries.async_get_entry(
+            self.context["entry_id"]
+        )
+        if not config_entry:
+            return self.async_abort(reason="reconfigure_failed")
+
+        suggested_values = user_input or config_entry.data
+
+        errors = {}
+        if user_input is not None:
+            try:
+                await validate_input(user_input)
+
+                return self.async_update_reload_and_abort(
+                    config_entry,
+                    title=user_input.get(CONF_NAME, DEFAULT_NAME),
+                    unique_id=config_entry.unique_id,
+                    data=user_input,
+                    reason="reconfigure_successful",
+                )
+
+            except requests.exceptions.RequestException as e:
+                _LOGGER.error(e)
+                errors["base"] = "connection_error"
+            except UnauthorizedError:
+                _LOGGER.exception("Unauthorized")
+                errors["base"] = "unauthorized"
+            except InvalidAPIKey:
+                _LOGGER.exception("Invalid API key")
+                errors[CONF_API_KEY] = "invalid_api_key"
+            except WhisperModelBlocked:
+                _LOGGER.exception("Whisper Model Not Found")
+                errors["base"] = "whisper_blocked"
+            except UnknownError:
+                _LOGGER.exception("Unknown error")
+                errors["base"] = "unknown"
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(
+                data_schema=STEP_USER_DATA_SCHEMA, suggested_values=suggested_values
+            ),
+            errors=errors,
         )
 
 

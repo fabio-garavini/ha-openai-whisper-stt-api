@@ -1,7 +1,9 @@
 {
     "config": {
         "abort": {
-            "already_configured": "Device is already configured"
+            "already_configured": "Device is already configured",
+            "reconfigure_successful": "Reconfigured",
+            "reconfigure_failed": "Reconfiguration failed"
         },
         "error": {
             "invalid_api_key": "Invalid API Key",
@@ -10,6 +12,15 @@
         },
         "step": {
             "user": {
+                "data": {
+                    "name": "Name",
+                    "api_key": "API key",
+                    "model": "Model",
+                    "prompt": "Prompt",
+                    "temperature": "Temperature"
+                }
+            },
+            "reconfigure": {
                 "data": {
                     "name": "Name",
                     "api_key": "API key",

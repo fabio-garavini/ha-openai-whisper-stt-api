@@ -1,7 +1,9 @@
 {
     "config": {
         "abort": {
-            "already_configured": "Dispositivo gia' configurato"
+            "already_configured": "Dispositivo gia' configurato",
+            "reconfigure_successful": "Dispositivo riconfigurato",
+            "reconfigure_failed": "Riconfigurazione fallita"
         },
         "error": {
             "invalid_api_key": "Chiave API non valida",
@@ -10,6 +12,15 @@
         },
         "step": {
             "user": {
+                "data": {
+                    "name": "Nome",
+                    "api_key": "Chiave API",
+                    "model": "Modello",
+                    "prompt": "Prompt",
+                    "temperature": "Temperatura"
+                }
+            },
+            "reconfigure": {
                 "data": {
                     "name": "Nome",
                     "api_key": "Chiave API",
