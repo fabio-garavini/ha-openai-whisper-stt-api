@@ -39,9 +39,11 @@ Before configuring the integration you must first install the `custom_integratio
 These are the parameters that you can configure:
 
 - `api_key`: (Required) OpenAI api key
-- `model`: (Required) At the moment the only model available is `whisper-1`
+- `model`: (Required) At the moment the only model available is `whisper-1` which actually is the *whisper-large-v2* model
 - `temperature`: (Optional) Sampling temperature between 0 and 1. Default `0`
-- `prompt`: (Optional) Used to guide the model's style. Default `""`
+- `prompt`: (Optional) Can be used to **improve speech recognition** of words or even names. Default `""`
+  <br>You have to provide a list of words or names separated by a comma `, `
+  <br>Example: `"open, close, Chat GPT-3, DALL·E"`.
 
 Now you can set it up through your Home Assistant Dashboard (YAML configuration not supported).
 
