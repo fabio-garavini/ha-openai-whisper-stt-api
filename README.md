@@ -1,11 +1,37 @@
-# OpenAI Whisper STT Cloud API integration for Home Assistant 🏠🎙️
+# Whisper STT Cloud API integration for Home Assistant 🏠🎙️
 
-This is a custom integration for using OpenAI cloud speech-to-text API in the Assist pipeline, reducing the workload on the Home Assistant server.
+This HA custom integration lets you use any compatible OpenAI API (OpenAI, GroqCloud, others coming ...) for computing speech-to-text in cloud, reducing workload on Home Assistant server.
 
-## Requirements 📖
+## Sources
+
+- *OpenAI*
+- *GroqCloud*
+- others coming ...
+
+## OpenAI
+
+### Requirements 📖
 
 - An OpenAI account 👤  --> You can create one [here](https://platform.openai.com/signup)
 - An `API Key` 🔑 --> You can generate one [here](https://platform.openai.com/api-keys)
+
+### Models
+
+- `whisper-1` - At the moment is the only model available, despite the name this is the *whisper-large-v2* model
+
+## GroqCloud
+
+### Requirements 📖
+
+- An GroqCloud account 👤  --> You can create one [here](https://console.groq.com/login)
+- An `API Key` 🔑 --> You can generate one [here](https://console.groq.com/keys)
+
+### Models
+
+Currently all GroqCloud Whisper models are free up to 28800 audio seconds per day!
+
+- `whisper-large-v3`
+- `distil-whisper-large-v3-en` - optimzed version of *whisper-large-v3* **only for english** language
 
 ## How to install ⚙️
 
@@ -38,8 +64,8 @@ Before configuring the integration you must first install the `custom_integratio
 
 These are the parameters that you can configure:
 
-- `api_key`: (Required) OpenAI api key
-- `model`: (Required) At the moment the only model available is `whisper-1` which actually is the *whisper-large-v2* model
+- `api_key`: (Required) api key
+- `model`: (Required) Check your source API
 - `temperature`: (Optional) Sampling temperature between 0 and 1. Default `0`
 - `prompt`: (Optional) Can be used to **improve speech recognition** of words or even names. Default `""`
   <br>You have to provide a list of words or names separated by a comma `, `
