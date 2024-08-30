@@ -1,13 +1,13 @@
 """Constants for the OpenAI Whisper Cloud integration."""
 
+import logging
+
 DOMAIN = "openai_whisper_cloud"
+
+_LOGGER = logging.getLogger(__name__)
 
 CONF_PROMPT = "prompt"
 CONF_TEMPERATURE = "temperature"
-
-SUPPORTED_MODELS = [
-    "whisper-1"
-]
 
 SUPPORTED_LANGUAGES = [
     "af",
@@ -69,7 +69,5 @@ SUPPORTED_LANGUAGES = [
     "cy"
 ]
 
-DEFAULT_NAME = "OpenAI Whisper"
-DEFAULT_WHISPER_MODEL = SUPPORTED_MODELS[0]
 DEFAULT_PROMPT = ""
 DEFAULT_TEMPERATURE = 0

@@ -8,16 +8,21 @@
         "error": {
             "invalid_api_key": "Chiave API non valida",
             "unauthorized": "Assicurati che la tua chiave api abbia i permessi di READ su 'Models' e di WRITE su 'Model capabilities'",
-            "whisper_blocked":  "Whisper e' bloccato sul tuo Progetto OpenAI"
+            "whisper_not_found":  "Modello Whisper non trovato"
         },
         "step": {
             "user": {
+                "data": {
+                    "source": "API Provider"
+                }
+            },
+            "whisper": {
                 "data": {
                     "name": "Nome",
                     "api_key": "Chiave API",
                     "model": "Modello",
                     "temperature": "Temperatura",
-                    "prompt": "Prompt"
+                    "prompt": "Prompt (Opzionale)"
                 },
                 "data_description": {
                     "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: \"accendi, spegni, Chat GPT-3, DALL·E\""
@@ -26,10 +31,36 @@
             "reconfigure": {
                 "data": {
                     "name": "Nome",
+                    "api_key": "Chiave API (Optional)",
+                    "model": "Modello",
+                    "temperature": "Temperatura",
+                    "prompt": "Prompt (Opzionale)"
+                },
+                "data_description": {
+                    "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: \"accendi, spegni, Chat GPT-3, DALL·E\""
+                }
+            }
+        }
+    },
+    "options": {
+        "abort": {
+            "already_configured": "Dispositivo gia' configurato",
+            "reconfigure_successful": "Dispositivo riconfigurato",
+            "reconfigure_failed": "Riconfigurazione fallita"
+        },
+        "error": {
+            "invalid_api_key": "Chiave API non valida",
+            "unauthorized": "Assicurati che la tua chiave api abbia i permessi di READ su 'Models' e di WRITE su 'Model capabilities'",
+            "whisper_not_found":  "Modello Whisper non trovato"
+        },
+        "step": {
+            "init": {
+                "data": {
+                    "name": "Nome",
                     "api_key": "Chiave API",
                     "model": "Modello",
                     "temperature": "Temperatura",
-                    "prompt": "Prompt"
+                    "prompt": "Prompt (Opzionale)"
                 },
                 "data_description": {
                     "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: \"accendi, spegni, Chat GPT-3, DALL·E\""

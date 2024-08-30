@@ -8,31 +8,62 @@
         "error": {
             "invalid_api_key": "Invalid API Key",
             "unauthorized": "Make sure your api key has READ permission to 'Models' and WRITE permission to 'Model capabilities'",
-            "whisper_blocked":  "Whisper is blocked on your OpenAI project"
+            "whisper_not_found":  "Whisper model not found"
         },
         "step": {
             "user": {
+                "data": {
+                    "source": "API Provider"
+                }
+            },
+            "whisper": {
                 "data": {
                     "name": "Name",
                     "api_key": "API key",
                     "model": "Model",
                     "temperature": "Temperature",
-                    "prompt": "Prompt"
+                    "prompt": "Prompt (Optional)"
                 },
                 "data_description": {
-                    "prompt": "Prompt can be used to improve speech recognition of words or even names. You have to provide a list of words or names separated by a comma \", \".\nExample: \"open, close, Chat GPT-3, DALL·E\""
+                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nou have to provide a list of words or names separated by a comma \", \".\nExample: \"open, close, Chat GPT-3, DALL·E\""
                 }
             },
             "reconfigure": {
                 "data": {
                     "name": "Name",
-                    "api_key": "API key",
+                    "api_key": "API key (Optional)",
                     "model": "Model",
                     "temperature": "Temperature",
-                    "prompt": "Prompt"
+                    "prompt": "Prompt (Optional)"
                 },
                 "data_description": {
-                    "prompt": "Prompt can be used to improve speech recognition of words or even names. You have to provide a list of words or names separated by a comma \", \".\nExample: \"open, close, Chat GPT-3, DALL·E\""
+                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nou have to provide a list of words or names separated by a comma \", \".\nExample: \"open, close, Chat GPT-3, DALL·E\""
+                }
+            }
+        }
+    },
+    "options": {
+        "abort": {
+            "already_configured": "Device is already configured",
+            "reconfigure_successful": "Reconfigured",
+            "reconfigure_failed": "Reconfiguration failed"
+        },
+        "error": {
+            "invalid_api_key": "Invalid API Key",
+            "unauthorized": "Make sure your api key has READ permission to 'Models' and WRITE permission to 'Model capabilities'",
+            "whisper_not_found":  "Whisper model not found"
+        },
+        "step": {
+            "init": {
+                "data": {
+                    "name": "Name",
+                    "api_key": "API key (leave blank to keep existing)",
+                    "model": "Model",
+                    "temperature": "Temperature",
+                    "prompt": "Prompt (Optional)"
+                },
+                "data_description": {
+                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: \"open, close, Chat GPT-3, DALL·E\""
                 }
             }
         }

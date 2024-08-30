@@ -21,11 +21,13 @@ from homeassistant.components.stt import (
     SpeechToTextEntity,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_API_KEY, CONF_MODEL, CONF_NAME, CONF_SOURCE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import _LOGGER
-from .const import SUPPORTED_LANGUAGES
+from .const import CONF_PROMPT, CONF_TEMPERATURE
+from .whisper_provider import WhisperModel, whisper_providers
 
 
 async def async_setup_entry(
@@ -34,17 +36,27 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Demo speech platform via config entry."""
-    _LOGGER.debug("Setup Entry %s", config_entry.entry_id)
-    async_add_entities(
-        [OpenAIWhisperCloudEntity(**config_entry.data, unique_id=config_entry.entry_id)]
-    )
+    _LOGGER.debug(f"STT setup Entry {config_entry.entry_id}")
+
+    async_add_entities([
+        OpenAIWhisperCloudEntity(
+            api_url=whisper_providers[config_entry.data[CONF_SOURCE]].url,
+            api_key=config_entry.data[CONF_API_KEY],
+            model=whisper_providers[config_entry.data[CONF_SOURCE]].models[config_entry.options[CONF_MODEL]],
+            temperature=config_entry.options[CONF_TEMPERATURE],
+            prompt=config_entry.options[CONF_PROMPT],
+            name=config_entry.data[CONF_NAME],
+            unique_id=config_entry.entry_id
+        )
+    ])
 
 
 class OpenAIWhisperCloudEntity(SpeechToTextEntity):
     """OpenAI Whisper API provider entity."""
 
-    def __init__(self, api_key, model, temperature, prompt, name, unique_id) -> None:
+    def __init__(self, api_url: str, api_key: str, model: WhisperModel, temperature, prompt, name, unique_id) -> None:
         """Init STT service."""
+        self.api_url = api_url
         self.api_key = api_key
         self.model = model
         self.temperature = temperature
@@ -55,7 +67,7 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
     @property
     def supported_languages(self) -> list[str]:
         """Return a list of supported languages."""
-        return SUPPORTED_LANGUAGES
+        return self.model.languages
 
     @property
     def supported_formats(self) -> list[AudioFormats]:
@@ -130,17 +142,17 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
 
             # Prepare the data payload
             data = {
-                "model": self.model,
+                "model": self.model.name,
                 "language": metadata.language,
                 "temperature": self.temperature,
                 "prompt": self.prompt,
-                "response_format": "json"
+                "response_format": "json",
             }
 
             # Make the request in a separate thread
             response = await asyncio.to_thread(
                 requests.post,
-                "https://api.openai.com/v1/audio/transcriptions",
+                f"{self.api_url}/v1/audio/transcriptions",
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                 },
