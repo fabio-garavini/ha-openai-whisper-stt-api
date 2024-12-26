@@ -1,7 +1,7 @@
 {
   "domain": "openai_whisper_cloud",
   "name": "Whisper Cloud",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "codeowners": [
     "@fabio-garavini"
   ],
