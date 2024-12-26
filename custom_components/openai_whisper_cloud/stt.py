@@ -168,7 +168,7 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
             _LOGGER.debug("TRANSCRIPTION: %s", transcription)
 
             if not transcription:
-                _LOGGER.error("No transcription received")
+                _LOGGER.error(response.text)
                 return SpeechResult("", SpeechResultState.ERROR)
 
             return SpeechResult(transcription, SpeechResultState.SUCCESS)
