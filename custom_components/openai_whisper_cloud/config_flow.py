@@ -15,7 +15,13 @@ from homeassistant.config_entries import (
     ConfigFlowResult,
     OptionsFlowWithConfigEntry,
 )
-from homeassistant.const import CONF_API_KEY, CONF_MODEL, CONF_NAME, CONF_SOURCE
+from homeassistant.const import (
+    CONF_API_KEY,
+    CONF_MODEL,
+    CONF_NAME,
+    CONF_SOURCE,
+    CONF_URL,
+)
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.selector import (
@@ -27,6 +33,7 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     _LOGGER,
+    CONF_CUSTOM_PROVIDER,
     CONF_PROMPT,
     CONF_TEMPERATURE,
     DEFAULT_PROMPT,
@@ -111,7 +118,7 @@ class OptionsFlowHandler(OptionsFlowWithConfigEntry):
                         for x in whisper_providers[
                             self.config_entry.data[CONF_SOURCE]
                         ].models
-                    ].index(user_input[CONF_MODEL]),
+                    ].index(user_input[CONF_MODEL]) if not self.config_entry.data.get(CONF_CUSTOM_PROVIDER) else user_input[CONF_MODEL],
                     CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
                     CONF_PROMPT: user_input.get(CONF_PROMPT, ""),
                 },
@@ -129,7 +136,7 @@ class OptionsFlowHandler(OptionsFlowWithConfigEntry):
                                     self.config_entry.data[CONF_SOURCE]
                                 ].models
                             ]
-                        ),
+                        ) if not self.config_entry.data.get(CONF_CUSTOM_PROVIDER) else cv.string,
                         vol.Optional(CONF_TEMPERATURE): vol.All(
                             vol.Coerce(float), vol.Range(min=0, max=1)
                         ),
@@ -139,7 +146,7 @@ class OptionsFlowHandler(OptionsFlowWithConfigEntry):
                 suggested_values={
                     CONF_MODEL: whisper_providers[self.config_entry.data[CONF_SOURCE]]
                     .models[self.config_entry.options[CONF_MODEL]]
-                    .name,
+                    .name if not self.config_entry.data.get(CONF_CUSTOM_PROVIDER) else self.config_entry.options[CONF_MODEL],
                     CONF_TEMPERATURE: self.config_entry.options[CONF_TEMPERATURE],
                     CONF_PROMPT: self.config_entry.options.get(CONF_PROMPT, ""),
                 },
@@ -172,7 +179,9 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
         """Handle initial step."""
         errors = {}
         if user_input is not None:
-            self._provider = whisper_providers[int(user_input[CONF_SOURCE])]
+            if int(user_input[CONF_SOURCE]) != 2:
+                self._provider = whisper_providers[int(user_input[CONF_SOURCE])]
+
             return await self.async_step_whisper()
 
         return self.async_show_form(
@@ -187,6 +196,23 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
         """Handle initial step."""
         errors = {}
         if user_input is not None:
+
+            if self._provider is None:
+                return self.async_create_entry(
+                    title=user_input.get(CONF_NAME),
+                    data={
+                        CONF_CUSTOM_PROVIDER: True,
+                        CONF_NAME: user_input[CONF_NAME],
+                        CONF_URL: user_input[CONF_URL],
+                        CONF_API_KEY: user_input.get(CONF_API_KEY),
+                    },
+                    options={
+                        CONF_MODEL: user_input[CONF_MODEL],
+                        CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
+                        CONF_PROMPT: user_input.get(CONF_PROMPT, ""),
+                    },
+                )
+
             try:
                 await validate_input(user_input, self._provider)
 
@@ -217,6 +243,26 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "whisper_not_found"
             except UnknownError:
                 errors["base"] = "unknown"
+
+        if self._provider is None:
+            return self.async_show_form(
+                step_id="whisper",
+                data_schema=vol.Schema(
+                    {
+                        vol.Required(
+                            CONF_NAME, default="Custom Whisper"
+                        ): cv.string,
+                        vol.Required(CONF_URL): cv.string,
+                        vol.Optional(CONF_API_KEY): cv.string,
+                        vol.Required(CONF_MODEL): cv.string,
+                        vol.Optional(
+                            CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE
+                        ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
+                        vol.Optional(CONF_PROMPT): cv.string,
+                    }
+                ),
+                errors=errors,
+            )
 
         return self.async_show_form(
             step_id="whisper",
@@ -251,15 +297,71 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
 
         entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
 
+        if entry.data.get(CONF_CUSTOM_PROVIDER, False):
+
+            if user_input is not None:
+
+                self.hass.config_entries.async_update_entry(
+                    entry=entry,
+                    title=user_input.get(CONF_NAME),
+                    data={
+                        CONF_CUSTOM_PROVIDER: True,
+                        CONF_NAME: user_input[CONF_NAME],
+                        CONF_URL: user_input[CONF_URL],
+                        CONF_API_KEY: user_input.get(CONF_API_KEY, entry.data.get(CONF_API_KEY, "")),
+                    },
+                    options={
+                        CONF_MODEL: user_input[CONF_MODEL],
+                        CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
+                        CONF_PROMPT: user_input.get(CONF_PROMPT, ""),
+                    },
+                )
+
+                await self.hass.config_entries.async_reload(self.context["entry_id"])
+                return self.async_abort(reason="reconfigure_successful")
+
+
+            return self.async_show_form(
+                step_id="reconfigure",
+                data_schema=self.add_suggested_values_to_schema(
+                    data_schema=vol.Schema(
+                        {
+                            vol.Required(
+                                CONF_NAME, default="Custom Whisper"
+                            ): cv.string,
+                            vol.Required(CONF_URL): cv.string,
+                            vol.Optional(CONF_API_KEY): cv.string,
+                            vol.Required(CONF_MODEL): cv.string,
+                            vol.Optional(
+                                CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE
+                            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
+                            vol.Optional(CONF_PROMPT): cv.string,
+                        }
+                    ),
+                    suggested_values={
+                        CONF_NAME: entry.data.get(CONF_NAME),
+                        CONF_URL: entry.data.get(CONF_URL),
+                        CONF_MODEL: entry.options.get(CONF_MODEL),
+                        CONF_TEMPERATURE: entry.options.get(CONF_TEMPERATURE),
+                        CONF_PROMPT: entry.options.get(CONF_PROMPT),
+                    },
+                ),
+                errors=errors,
+            )
+
         provider: WhisperProvider = whisper_providers[entry.data.get(CONF_SOURCE)]
         whisper: WhisperModel = provider.models[entry.options.get(CONF_MODEL)]
 
         if user_input is not None:
-            if CONF_API_KEY not in user_input:
-                user_input[CONF_API_KEY] = entry.data.get(CONF_API_KEY)
 
             try:
-                await validate_input(user_input, provider)
+                await validate_input(
+                    {
+                        **user_input,
+                        CONF_API_KEY: user_input.get(CONF_API_KEY, entry.data.get(CONF_API_KEY, ""))
+                    },
+                    provider
+                )
 
                 self.hass.config_entries.async_update_entry(
                     entry=entry,
@@ -267,7 +369,7 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                     data={
                         CONF_SOURCE: entry.data.get(CONF_SOURCE),
                         CONF_NAME: user_input[CONF_NAME],
-                        CONF_API_KEY: user_input.get(CONF_API_KEY),
+                        CONF_API_KEY: user_input.get(CONF_API_KEY, entry.data.get(CONF_API_KEY, "")),
                     },
                     options={
                         CONF_MODEL: [x.name for x in provider.models].index(

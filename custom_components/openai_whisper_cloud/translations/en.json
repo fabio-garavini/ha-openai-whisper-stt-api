@@ -19,25 +19,29 @@
             "whisper": {
                 "data": {
                     "name": "Name",
+                    "url": "Url",
                     "api_key": "API key",
                     "model": "Model",
                     "temperature": "Temperature",
                     "prompt": "Prompt (Optional)"
                 },
                 "data_description": {
-                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nou have to provide a list of words or names separated by a comma \", \".\nExample: \"open, close, Chat GPT-3, DALL·E\""
+                    "url": "Full whisper api url. Example: `https://api.openai.com/v1/audio/transcriptions`",
+                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`"
                 }
             },
             "reconfigure": {
                 "data": {
                     "name": "Name",
+                    "url": "Url",
                     "api_key": "API key (Optional)",
                     "model": "Model",
                     "temperature": "Temperature",
                     "prompt": "Prompt (Optional)"
                 },
                 "data_description": {
-                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nou have to provide a list of words or names separated by a comma \", \".\nExample: \"open, close, Chat GPT-3, DALL·E\""
+                    "url": "Full whisper api url. Example: `https://api.openai.com/v1/audio/transcriptions`",
+                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`"
                 }
             }
         }
@@ -63,7 +67,7 @@
                     "prompt": "Prompt (Optional)"
                 },
                 "data_description": {
-                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: \"open, close, Chat GPT-3, DALL·E\""
+                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`"
                 }
             }
         }

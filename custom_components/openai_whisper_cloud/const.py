@@ -8,6 +8,7 @@ _LOGGER = logging.getLogger(__name__)
 
 CONF_PROMPT = "prompt"
 CONF_TEMPERATURE = "temperature"
+CONF_CUSTOM_PROVIDER = "custom_provider"
 
 SUPPORTED_LANGUAGES = [
     "af",

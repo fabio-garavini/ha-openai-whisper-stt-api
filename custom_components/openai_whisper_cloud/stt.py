@@ -21,12 +21,23 @@ from homeassistant.components.stt import (
     SpeechToTextEntity,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_API_KEY, CONF_MODEL, CONF_NAME, CONF_SOURCE
+from homeassistant.const import (
+    CONF_API_KEY,
+    CONF_MODEL,
+    CONF_NAME,
+    CONF_SOURCE,
+    CONF_URL,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import _LOGGER
-from .const import CONF_PROMPT, CONF_TEMPERATURE
+from .const import (
+    CONF_CUSTOM_PROVIDER,
+    CONF_PROMPT,
+    CONF_TEMPERATURE,
+    SUPPORTED_LANGUAGES,
+)
 from .whisper_provider import WhisperModel, whisper_providers
 
 
@@ -35,14 +46,15 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Demo speech platform via config entry."""
+    """Set up Whisper speech platform via config entry."""
     _LOGGER.debug(f"STT setup Entry {config_entry.entry_id}")
 
     async_add_entities([
         OpenAIWhisperCloudEntity(
-            api_url=whisper_providers[config_entry.data[CONF_SOURCE]].url,
-            api_key=config_entry.data[CONF_API_KEY],
-            model=whisper_providers[config_entry.data[CONF_SOURCE]].models[config_entry.options[CONF_MODEL]],
+            custom=config_entry.data.get(CONF_CUSTOM_PROVIDER, False),
+            api_url=config_entry.data[CONF_URL] if config_entry.data.get(CONF_CUSTOM_PROVIDER) else whisper_providers[config_entry.data[CONF_SOURCE]].url,
+            api_key=config_entry.data.get(CONF_API_KEY, ""),
+            model= WhisperModel(config_entry.options[CONF_MODEL], SUPPORTED_LANGUAGES) if config_entry.data.get(CONF_CUSTOM_PROVIDER) else whisper_providers[config_entry.data[CONF_SOURCE]].models[config_entry.options[CONF_MODEL]],
             temperature=config_entry.options[CONF_TEMPERATURE],
             prompt=config_entry.options[CONF_PROMPT],
             name=config_entry.data[CONF_NAME],
@@ -51,11 +63,13 @@ async def async_setup_entry(
     ])
 
 
+
 class OpenAIWhisperCloudEntity(SpeechToTextEntity):
     """OpenAI Whisper API provider entity."""
 
-    def __init__(self, api_url: str, api_key: str, model: WhisperModel, temperature, prompt, name, unique_id) -> None:
+    def __init__(self, custom: bool, api_url: str, api_key: str, model: WhisperModel, temperature, prompt, name, unique_id) -> None:
         """Init STT service."""
+        self.custom = custom
         self.api_url = api_url
         self.api_key = api_key
         self.model = model
@@ -152,7 +166,7 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
             # Make the request in a separate thread
             response = await asyncio.to_thread(
                 requests.post,
-                f"{self.api_url}/v1/audio/transcriptions",
+                f"{self.api_url}/v1/audio/transcriptions" if not self.custom else self.api_url,
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                 },

@@ -42,4 +42,5 @@ whisper_providers = [
         ],
         1
     ),
+    WhisperProvider("Custom", "", [], 0),
 ]
