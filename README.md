@@ -6,7 +6,7 @@ This HA custom integration lets you use any compatible OpenAI API (OpenAI, GroqC
 
 - *OpenAI*
 - *GroqCloud*
-- others coming ...
+- *Custom*
 
 ## OpenAI
 
@@ -32,6 +32,10 @@ Currently all GroqCloud Whisper models are free up to 28800 audio seconds per da
 
 - `whisper-large-v3`
 - `distil-whisper-large-v3-en` - optimzed version of *whisper-large-v3* **only for english** language
+
+## Custom
+
+Any other OpenAI compatible api
 
 ## How to install ⚙️
 
