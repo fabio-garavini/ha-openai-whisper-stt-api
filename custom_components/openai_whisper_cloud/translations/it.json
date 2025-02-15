@@ -23,11 +23,13 @@
             "api_key": "Chiave API",
             "model": "Modello",
             "temperature": "Temperatura",
-            "prompt": "Prompt (Opzionale)"
+            "prompt": "Prompt (Opzionale)",
+            "reduce_noise": "Ridurre il rumore"
           },
           "data_description": {
             "url": "Indirizzo Url completo. Esempio: `https://api.openai.com/v1/audio/transcriptions`",
-            "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`"
+            "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`",
+            "reduce_noise": "La riduzione del rumore rimuoverà il rumore di fondo.\nL'elaborazione dell'audio richiederà un po' più tempo."
           }
         },
         "reconfigure": {
@@ -37,11 +39,13 @@
             "api_key": "Chiave API (Optional)",
             "model": "Modello",
             "temperature": "Temperatura",
-            "prompt": "Prompt (Opzionale)"
+            "prompt": "Prompt (Opzionale)",
+            "reduce_noise": "Ridurre il rumore"
           },
           "data_description": {
             "url": "Indirizzo Url completo. Esempio: `https://api.openai.com/v1/audio/transcriptions`",
-            "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`"
+            "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`",
+            "reduce_noise": "La riduzione del rumore rimuoverà il rumore di fondo.\nL'elaborazione dell'audio richiederà un po' più tempo."
           }
         }
       }
@@ -64,10 +68,12 @@
             "api_key": "Chiave API",
             "model": "Modello",
             "temperature": "Temperatura",
-            "prompt": "Prompt (Opzionale)"
+            "prompt": "Prompt (Opzionale)",
+            "reduce_noise": "Ridurre il rumore"
           },
           "data_description": {
-            "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`"
+            "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`",
+            "reduce_noise": "La riduzione del rumore rimuoverà il rumore di fondo.\nL'elaborazione dell'audio richiederà un po' più tempo."
           }
         }
       }

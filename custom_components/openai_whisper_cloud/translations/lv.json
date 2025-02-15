@@ -1,0 +1,81 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Ierīce jau ir konfigurēta",
+            "reconfigure_successful": "Pārkonfigurācija veiksmīga",
+            "reconfigure_failed": "Pārkonfigurācija neizdevās"
+        },
+        "error": {
+            "invalid_api_key": "Nederīga API atslēga",
+            "unauthorized": "Lūdzu pārliecinieties, ka jūsu api atslegai ir LASŠANAS atļauja 'Modeļiem' un RAKSTĪŠANAS atauja 'Modeļu iespējām'",
+            "whisper_not_found":  "Whisper modelis nav atrasts"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "source": "API piegādātājs"
+                }
+            },
+            "whisper": {
+                "data": {
+                    "name": "Nosaukums",
+                    "url": "Url",
+                    "api_key": "API atslēga",
+                    "model": "Modelis",
+                    "temperature": "Temperatūra",
+                    "prompt": "Uzvedne (neobligāts)",
+                    "reduce_noise": "Samazināt troksni"
+                },
+                "data_description": {
+                    "url": "Pilna api adrese. Piemēram: `https://api.openai.com/v1/audio/transcriptions`",
+                    "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`",
+                    "reduce_noise": "Trokšņu samazināšana noņems fona trokšņus.\nAudio apstrāde aizņems nedaudz ilgāk."
+                }
+            },
+            "reconfigure": {
+                "data": {
+                    "name": "Nosaukums",
+                    "url": "Url",
+                    "api_key": "API atslēga",
+                    "model": "Modelis",
+                    "temperature": "Temperatūra",
+                    "prompt": "Uzvedne (neobligāts)",
+                    "reduce_noise": "Samazināt troksni"
+                },
+                "data_description": {
+                    "url": "Pilna api adrese. Piemēram: `https://api.openai.com/v1/audio/transcriptions`",
+                    "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`",
+                    "reduce_noise": "Trokšņu samazināšana noņems fona trokšņus.\nAudio apstrāde aizņems nedaudz ilgāk."
+                }
+            }
+        }
+    },
+    "options": {
+        "abort": {
+            "already_configured": "Device is already configured",
+            "reconfigure_successful": "Reconfigured",
+            "reconfigure_failed": "Reconfiguration failed"
+        },
+        "error": {
+            "invalid_api_key": "Invalid API Key",
+            "unauthorized": "Make sure your api key has READ permission to 'Models' and WRITE permission to 'Model capabilities'",
+            "whisper_not_found":  "Whisper model not found"
+        },
+        "step": {
+            "init": {
+                "data": {
+                    "name": "Nosaukums",
+                    "api_key": "API atslēga",
+                    "model": "Modelis",
+                    "temperature": "Temperatūra",
+                    "prompt": "Uzvedne (neobligāts)",
+                    "reduce_noise": "Samazināt troksni"
+                },
+                "data_description": {
+                    "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`",
+                    "reduce_noise": "Trokšņu samazināšana noņems fona trokšņus.\nAudio apstrāde aizņems nedaudz ilgāk."
+                }
+            }
+        }
+    }
+}
