@@ -10,7 +10,15 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 
-from .const import _LOGGER, CONF_PROMPT, CONF_TEMPERATURE
+from .const import (
+    _LOGGER,
+    CONF_PROMPT,
+    CONF_TEMPERATURE,
+    CONF_REDUCE_NOISE,
+    DEFAULT_PROMPT,
+    DEFAULT_TEMPERATURE,
+    DEFAULT_REDUCE_NOISE
+)
 
 PLATFORMS = [Platform.STT]
 
@@ -76,6 +84,16 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
 
         hass.config_entries.async_update_entry(
             config_entry, data=new_data, options=new_options, minor_version=1, version=1
+        )
+
+    if config_entry.version == 1 and ( config_entry.minor_version == 1 or config_entry.minor_version == 2 ) :
+        new_options = {
+            **config_entry.data,
+            CONF_REDUCE_NOISE: False,
+        }
+
+        hass.config_entries.async_update_entry(
+            config_entry, options=new_options, minor_version=3, version=1
         )
 
     _LOGGER.info(f"Migration of {config_entry.entry_id} successful")

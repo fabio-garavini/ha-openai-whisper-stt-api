@@ -6,6 +6,8 @@ import asyncio
 from collections.abc import AsyncIterable
 import io
 import wave
+import numpy as np
+import noisereduce as nr
 
 import requests
 
@@ -34,8 +36,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import _LOGGER
 from .const import (
     CONF_CUSTOM_PROVIDER,
-    CONF_PROMPT,
     CONF_TEMPERATURE,
+    CONF_PROMPT,
+    CONF_REDUCE_NOISE,
     SUPPORTED_LANGUAGES,
 )
 from .whisper_provider import WhisperModel, whisper_providers
@@ -57,6 +60,7 @@ async def async_setup_entry(
             model= WhisperModel(config_entry.options[CONF_MODEL], SUPPORTED_LANGUAGES) if config_entry.data.get(CONF_CUSTOM_PROVIDER) else whisper_providers[config_entry.data[CONF_SOURCE]].models[config_entry.options[CONF_MODEL]],
             temperature=config_entry.options[CONF_TEMPERATURE],
             prompt=config_entry.options[CONF_PROMPT],
+            reduce_noise=config_entry.options[CONF_REDUCE_NOISE],
             name=config_entry.data[CONF_NAME],
             unique_id=config_entry.entry_id
         )
@@ -67,7 +71,7 @@ async def async_setup_entry(
 class OpenAIWhisperCloudEntity(SpeechToTextEntity):
     """OpenAI Whisper API provider entity."""
 
-    def __init__(self, custom: bool, api_url: str, api_key: str, model: WhisperModel, temperature, prompt, name, unique_id) -> None:
+    def __init__(self, custom: bool, api_url: str, api_key: str, model: WhisperModel, temperature, prompt, reduce_noise, name, unique_id) -> None:
         """Init STT service."""
         self.custom = custom
         self.api_url = api_url
@@ -75,6 +79,7 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
         self.model = model
         self.temperature = temperature
         self.prompt = prompt
+        self.reduce_noise = reduce_noise
         self._attr_name = name
         self._attr_unique_id = unique_id
 
@@ -137,6 +142,10 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
             return SpeechResult("", SpeechResultState.ERROR)
 
         try:
+            if self.reduce_noise:
+                audio_data = np.frombuffer(data, dtype=np.int16)
+                data = nr.reduce_noise(y=audio_data, sr=metadata.sample_rate)
+
             temp_file = io.BytesIO()
             with wave.open(temp_file, "wb") as wav_file:
                 wav_file.setnchannels(metadata.channel)
