@@ -60,7 +60,7 @@ async def async_setup_entry(
             model= WhisperModel(config_entry.options[CONF_MODEL], SUPPORTED_LANGUAGES) if config_entry.data.get(CONF_CUSTOM_PROVIDER) else whisper_providers[config_entry.data[CONF_SOURCE]].models[config_entry.options[CONF_MODEL]],
             temperature=config_entry.options[CONF_TEMPERATURE],
             prompt=config_entry.options[CONF_PROMPT],
-            reduce_noise=config_entry.options[CONF_REDUCE_NOISE],
+            reduce_noise=config_entry.options.get(CONF_REDUCE_NOISE, False),
             name=config_entry.data[CONF_NAME],
             unique_id=config_entry.entry_id
         )
