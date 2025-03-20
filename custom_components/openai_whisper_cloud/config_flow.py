@@ -36,10 +36,8 @@ from .const import (
     CONF_CUSTOM_PROVIDER,
     CONF_PROMPT,
     CONF_TEMPERATURE,
-    CONF_REDUCE_NOISE,
     DEFAULT_PROMPT,
     DEFAULT_TEMPERATURE,
-    DEFAULT_REDUCE_NOISE,
     DOMAIN,
 )
 from .whisper_provider import WhisperModel, WhisperProvider, whisper_providers
@@ -71,8 +69,6 @@ async def validate_input(data: dict, provider: WhisperProvider):
         data[CONF_TEMPERATURE] = DEFAULT_TEMPERATURE
     if data.get(CONF_PROMPT) is None:
         data[CONF_PROMPT] = DEFAULT_PROMPT
-    if data.get(CONF_REDUCE_NOISE) is None:
-        data[CONF_REDUCE_NOISE] = DEFAULT_REDUCE_NOISE
 
     response = await asyncio.to_thread(
         requests.get,
@@ -125,7 +121,6 @@ class OptionsFlowHandler(OptionsFlowWithConfigEntry):
                     ].index(user_input[CONF_MODEL]) if not self.config_entry.data.get(CONF_CUSTOM_PROVIDER) else user_input[CONF_MODEL],
                     CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
                     CONF_PROMPT: user_input.get(CONF_PROMPT, DEFAULT_PROMPT),
-                    CONF_REDUCE_NOISE: user_input.get(CONF_REDUCE_NOISE, DEFAULT_REDUCE_NOISE),
                 },
             )
 
@@ -146,7 +141,6 @@ class OptionsFlowHandler(OptionsFlowWithConfigEntry):
                             vol.Coerce(float), vol.Range(min=0, max=1)
                         ),
                         vol.Optional(CONF_PROMPT): cv.string,
-                        vol.Optional(CONF_REDUCE_NOISE): cv.boolean,
                     }
                 ),
                 suggested_values={
@@ -155,7 +149,6 @@ class OptionsFlowHandler(OptionsFlowWithConfigEntry):
                     .name if not self.config_entry.data.get(CONF_CUSTOM_PROVIDER) else self.config_entry.options[CONF_MODEL],
                     CONF_TEMPERATURE: self.config_entry.options[CONF_TEMPERATURE],
                     CONF_PROMPT: self.config_entry.options.get(CONF_PROMPT, DEFAULT_PROMPT),
-                    CONF_REDUCE_NOISE: self.config_entry.options.get(CONF_REDUCE_NOISE, DEFAULT_REDUCE_NOISE),
                 },
             ),
             errors=errors,
@@ -235,7 +228,7 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                             user_input[CONF_MODEL]
                         ),
                         CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
-                        CONF_PROMPT: user_input.get(CONF_PROMPT, ""),
+                        CONF_PROMPT: user_input.get(CONF_PROMPT, DEFAULT_PROMPT),
                     },
                 )
 
@@ -266,7 +259,6 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                             CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE
                         ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
                         vol.Optional(CONF_PROMPT): cv.string,
-                        vol.Optional(CONF_REDUCE_NOISE): cv.boolean,
                     }
                 ),
                 errors=errors,
@@ -290,7 +282,6 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE
                     ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
                     vol.Optional(CONF_PROMPT): cv.string,
-                    vol.Optional(CONF_REDUCE_NOISE): cv.boolean,
                 }
             ),
             errors=errors,
@@ -323,7 +314,6 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_MODEL: user_input[CONF_MODEL],
                         CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
                         CONF_PROMPT: user_input.get(CONF_PROMPT, DEFAULT_PROMPT),
-                        CONF_REDUCE_NOISE: user_input.get(CONF_REDUCE_NOISE, DEFAULT_REDUCE_NOISE),
                     },
                 )
 
@@ -346,7 +336,6 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                                 CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE
                             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
                             vol.Optional(CONF_PROMPT): cv.string,
-                            vol.Optional(CONF_REDUCE_NOISE): cv.boolean,
                         }
                     ),
                     suggested_values={
@@ -355,7 +344,6 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_MODEL: entry.options.get(CONF_MODEL),
                         CONF_TEMPERATURE: entry.options.get(CONF_TEMPERATURE),
                         CONF_PROMPT: entry.options.get(CONF_PROMPT),
-                        CONF_REDUCE_NOISE: entry.options.get(CONF_REDUCE_NOISE),
                     },
                 ),
                 errors=errors,
@@ -389,7 +377,6 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                         ),
                         CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
                         CONF_PROMPT: user_input.get(CONF_PROMPT, DEFAULT_PROMPT),
-                        CONF_REDUCE_NOISE: user_input.get(CONF_REDUCE_NOISE, DEFAULT_REDUCE_NOISE),
                     },
                 )
                 await self.hass.config_entries.async_reload(self.context["entry_id"])
@@ -424,7 +411,6 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                             CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE
                         ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
                         vol.Optional(CONF_PROMPT): cv.string,
-                        vol.Optional(CONF_REDUCE_NOISE): cv.boolean,
                     }
                 ),
                 suggested_values={
@@ -432,7 +418,6 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                     CONF_MODEL: whisper.name,
                     CONF_TEMPERATURE: entry.options.get(CONF_TEMPERATURE),
                     CONF_PROMPT: entry.options.get(CONF_PROMPT),
-                    CONF_REDUCE_NOISE: entry.options.get(CONF_REDUCE_NOISE),
                 },
             ),
             errors=errors,

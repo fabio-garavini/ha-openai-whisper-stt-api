@@ -9,7 +9,6 @@ _LOGGER = logging.getLogger(__name__)
 CONF_PROMPT = "prompt"
 CONF_TEMPERATURE = "temperature"
 CONF_CUSTOM_PROVIDER = "custom_provider"
-CONF_REDUCE_NOISE = "reduce_noise"
 
 SUPPORTED_LANGUAGES = [
     "af",
@@ -73,4 +72,3 @@ SUPPORTED_LANGUAGES = [
 
 DEFAULT_PROMPT = ""
 DEFAULT_TEMPERATURE = 0
-DEFAULT_REDUCE_NOISE = False
