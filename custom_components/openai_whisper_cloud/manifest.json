@@ -1,17 +1,17 @@
 {
   "domain": "openai_whisper_cloud",
   "name": "Whisper Cloud",
-  "version": "1.2.0",
   "codeowners": [
     "@fabio-garavini"
   ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/fabio-garavini/ha-openai-whisper-stt-api",
-  "issue_tracker": "https://github.com/fabio-garavini/ha-openai-whisper-stt-api/issues",
   "homekit": {},
   "iot_class": "cloud_push",
+  "issue_tracker": "https://github.com/fabio-garavini/ha-openai-whisper-stt-api/issues",
   "requirements": [],
   "ssdp": [],
+  "version": "1.2.0",
   "zeroconf": []
 }
