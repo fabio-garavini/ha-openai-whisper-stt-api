@@ -40,7 +40,7 @@ whisper_providers = [
             WhisperModel("whisper-large-v3-turbo", SUPPORTED_LANGUAGES),
             WhisperModel("distil-whisper-large-v3-en", [ "en" ])
         ],
-        1
+        0
     ),
     WhisperProvider("Custom", "", [], 0),
 ]
