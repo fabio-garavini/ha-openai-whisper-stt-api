@@ -17,8 +17,8 @@ This HA custom integration lets you use any compatible OpenAI API (OpenAI, GroqC
 
 ### Models
 
-- `whisper-1` - Despite the name this is the *whisper-large-v2* model
 - `gpt-4o-mini-transcribe`, `gpt-4o-transcribe` - [Next generation](https://openai.com/index/introducing-our-next-generation-audio-models) OpenAI transcribe models
+- `whisper-1` - Despite the name this is the *whisper-large-v2* model
 
 ## GroqCloud
 

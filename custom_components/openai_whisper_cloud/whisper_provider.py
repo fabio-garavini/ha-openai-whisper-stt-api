@@ -32,7 +32,7 @@ whisper_providers = [
             WhisperModel("gpt-4o-transcribe", SUPPORTED_LANGUAGES),
             WhisperModel("gpt-4o-mini-transcribe", SUPPORTED_LANGUAGES),
         ],
-        0
+        2
     ),
     WhisperProvider(
         "GroqCloud",
