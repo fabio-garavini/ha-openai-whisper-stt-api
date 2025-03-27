@@ -28,9 +28,11 @@ whisper_providers = [
         "OpenAI",
         "https://api.openai.com",
         [
-            WhisperModel("whisper-1", SUPPORTED_LANGUAGES)
+            WhisperModel("whisper-1", SUPPORTED_LANGUAGES),
+            WhisperModel("gpt-4o-transcribe", SUPPORTED_LANGUAGES),
+            WhisperModel("gpt-4o-mini-transcribe", SUPPORTED_LANGUAGES),
         ],
-        0
+        2
     ),
     WhisperProvider(
         "GroqCloud",
