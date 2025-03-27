@@ -12,6 +12,6 @@
   "issue_tracker": "https://github.com/fabio-garavini/ha-openai-whisper-stt-api/issues",
   "requirements": [],
   "ssdp": [],
-  "version": "1.2.1",
+  "version": "1.2.2",
   "zeroconf": []
 }
