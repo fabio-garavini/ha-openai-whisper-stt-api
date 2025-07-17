@@ -1,11 +1,12 @@
 # Whisper STT Cloud API integration for Home Assistant 🏠🎙️
 
-This HA custom integration lets you use any compatible OpenAI API (OpenAI, GroqCloud, others coming ...) for computing speech-to-text in cloud, reducing workload on Home Assistant server.
+This HA custom integration lets you use any compatible OpenAI API (OpenAI, GroqCloud, Mistral AI, others coming ...) for computing speech-to-text in cloud, reducing workload on Home Assistant server.
 
 ## Sources
 
 - *OpenAI*
 - *GroqCloud*
+- *Mistral AI*
 - *Custom*
 
 ## OpenAI
@@ -34,6 +35,19 @@ Currently all GroqCloud Whisper models are free up to 28800 audio seconds per da
 - `whisper-large-v3`
 - `whisper-large-v3-turbo` - faster version of *whisper-large-v3*
 - `distil-whisper-large-v3-en` - optimzed version of *whisper-large-v3* **only for english** language
+
+## Mistral AI
+
+### Requirements 📖
+
+- An Mistralai account 👤  --> You can create one [here](https://auth.mistral.ai/ui/registration)
+- An `API Key` 🔑 --> You can generate one [here](https://console.mistral.ai/api-keys)
+
+### Models
+
+Currently all GroqCloud Whisper models are free up to 28800 audio seconds per day!
+
+- `voxtral-mini`
 
 ## Custom
 
