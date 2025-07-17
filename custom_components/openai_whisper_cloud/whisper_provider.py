@@ -44,5 +44,13 @@ whisper_providers = [
         ],
         1
     ),
+    WhisperProvider(
+        "Mistral AI",
+        "https://api.mistral.ai",
+        [
+            WhisperModel("voxtral-mini-latest", languages = ["en", "fr", "de", "es", "it", "pt", "nl", "hi", "ar"])
+        ],
+        0
+    ),
     WhisperProvider("Custom", "", [], 0),
 ]
