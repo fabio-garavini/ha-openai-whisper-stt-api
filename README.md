@@ -45,7 +45,7 @@ Currently all GroqCloud Whisper models are free up to 28800 audio seconds per da
 
 ### Models
 
-Currently all GroqCloud Whisper models are free up to 28800 audio seconds per day!
+Currently all Mistral AI models are free up to 1 billion token per month !
 
 - `voxtral-mini`
 
