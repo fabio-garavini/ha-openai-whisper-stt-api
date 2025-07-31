@@ -39,8 +39,7 @@ whisper_providers = [
         "https://api.groq.com/openai",
         [
             WhisperModel("whisper-large-v3", SUPPORTED_LANGUAGES),
-            WhisperModel("whisper-large-v3-turbo", SUPPORTED_LANGUAGES),
-            WhisperModel("distil-whisper-large-v3-en", [ "en" ])
+            WhisperModel("whisper-large-v3-turbo", SUPPORTED_LANGUAGES)
         ],
         1
     ),
