@@ -77,6 +77,23 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
         hass.config_entries.async_update_entry(
             config_entry, data=new_data, options=new_options, minor_version=1, version=1
         )
+    
+    if config_entry.version == 1 and config_entry.minor_version == 2 and config_entry.data.get(CONF_SOURCE) is 1 and config_entry.options.get(CONF_MODEL) is 2:
+        new_data = {
+            CONF_SOURCE: 1,
+            CONF_NAME: config_entry.data[CONF_NAME],
+            CONF_API_KEY: config_entry.data[CONF_API_KEY],
+        }
+
+        new_options = {
+            CONF_MODEL: 0,
+            CONF_TEMPERATURE: config_entry.options[CONF_TEMPERATURE],
+            CONF_PROMPT: config_entry.options[CONF_PROMPT],
+        }
+
+        hass.config_entries.async_update_entry(
+            config_entry, data=new_data, options=new_options, minor_version=1, version=3
+        )
 
     _LOGGER.info(f"Migration of {config_entry.entry_id} successful")
 
