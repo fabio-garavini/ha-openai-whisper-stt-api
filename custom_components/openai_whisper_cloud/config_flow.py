@@ -159,7 +159,7 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle UI config flow."""
 
     VERSION = 1
-    MINOR_VERSION = 2
+    MINOR_VERSION = 3
 
     _provider: WhisperProvider | None = None
 
@@ -179,7 +179,7 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
         """Handle initial step."""
         errors = {}
         if user_input is not None:
-            if int(user_input[CONF_SOURCE]) != 2:
+            if int(user_input[CONF_SOURCE]) != len(whisper_providers) -1:
                 self._provider = whisper_providers[int(user_input[CONF_SOURCE])]
 
             return await self.async_step_whisper()

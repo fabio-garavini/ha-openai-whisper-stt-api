@@ -77,8 +77,8 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
         hass.config_entries.async_update_entry(
             config_entry, data=new_data, options=new_options, minor_version=1, version=1
         )
-    
-    if config_entry.version == 1 and config_entry.minor_version == 2 and config_entry.data.get(CONF_SOURCE) is 1 and config_entry.options.get(CONF_MODEL) is 2:
+
+    if config_entry.version == 1 and config_entry.minor_version == 2 and config_entry.data.get(CONF_SOURCE) == 1 and config_entry.options.get(CONF_MODEL) == 2:
         new_data = {
             CONF_SOURCE: 1,
             CONF_NAME: config_entry.data[CONF_NAME],
