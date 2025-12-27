@@ -40,6 +40,19 @@ from .const import (
 )
 from .whisper_provider import WhisperModel, whisper_providers
 
+# Mapping of regional language variants to base language codes for Whisper API.
+# Whisper only supports base language codes (e.g., "zh"), not regional variants
+# (e.g., "zh-tw"). These regional variants are needed for Home Assistant's
+# intent recognition system to properly load language-specific intents.
+# See: https://github.com/home-assistant/intents/issues/1104
+LANGUAGE_TO_WHISPER: dict[str, str] = {
+    "zh-cn": "zh",
+    "zh-tw": "zh",
+    "zh-hk": "zh",
+    "zh-hans": "zh",
+    "zh-hant": "zh",
+}
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -155,9 +168,20 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
             }
 
             # Prepare the data payload
+            # Convert regional language variants to base language for Whisper API
+            whisper_language = LANGUAGE_TO_WHISPER.get(
+                metadata.language.lower() if metadata.language else "",
+                metadata.language,
+            )
+            if whisper_language != metadata.language:
+                _LOGGER.debug(
+                    "Converted language '%s' to '%s' for Whisper API",
+                    metadata.language,
+                    whisper_language,
+                )
             data = {
                 "model": self.model.name,
-                "language": metadata.language,
+                "language": whisper_language,
                 "temperature": self.temperature,
                 "prompt": self.prompt,
                 "response_format": "json",
