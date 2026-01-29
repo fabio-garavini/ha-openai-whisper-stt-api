@@ -27,7 +27,7 @@
                     "reduce_noise": "Samazināt troksni"
                 },
                 "data_description": {
-                    "url": "Pilna api adrese. Piemēram: `https://api.openai.com/v1/audio/transcriptions`",
+                    "url": "Pilna api adrese",
                     "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`",
                     "reduce_noise": "Trokšņu samazināšana noņems fona trokšņus.\nAudio apstrāde aizņems nedaudz ilgāk."
                 }
@@ -43,7 +43,7 @@
                     "reduce_noise": "Samazināt troksni"
                 },
                 "data_description": {
-                    "url": "Pilna api adrese. Piemēram: `https://api.openai.com/v1/audio/transcriptions`",
+                    "url": "Pilna api adrese",
                     "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`",
                     "reduce_noise": "Trokšņu samazināšana noņems fona trokšņus.\nAudio apstrāde aizņems nedaudz ilgāk."
                 }

@@ -27,7 +27,7 @@
                     "reduce_noise": "Reduce noise"
                 },
                 "data_description": {
-                    "url": "Full whisper api url. Example: `https://api.openai.com/v1/audio/transcriptions`",
+                    "url": "Full OpenAI compatible api url",
                     "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`",
                     "reduce_noise": "Noise reduction will remove background noise.\nAudio processing will take a bit longer."
                 }
@@ -43,7 +43,7 @@
                     "reduce_noise": "Reduce noise"
                 },
                 "data_description": {
-                    "url": "Full whisper api url. Example: `https://api.openai.com/v1/audio/transcriptions`",
+                    "url": "Full OpenAI compatible api url",
                     "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`",
                     "reduce_noise": "Noise reduction will remove background noise.\nAudio processing will take a bit longer."
                 }

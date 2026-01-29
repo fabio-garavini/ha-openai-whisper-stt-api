@@ -27,7 +27,7 @@
             "reduce_noise": "Ridurre il rumore"
           },
           "data_description": {
-            "url": "Indirizzo Url completo. Esempio: `https://api.openai.com/v1/audio/transcriptions`",
+            "url": "Url completo",
             "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`",
             "reduce_noise": "La riduzione del rumore rimuoverà il rumore di fondo.\nL'elaborazione dell'audio richiederà un po' più tempo."
           }
@@ -43,7 +43,7 @@
             "reduce_noise": "Ridurre il rumore"
           },
           "data_description": {
-            "url": "Indirizzo Url completo. Esempio: `https://api.openai.com/v1/audio/transcriptions`",
+            "url": "Url completo",
             "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`",
             "reduce_noise": "La riduzione del rumore rimuoverà il rumore di fondo.\nL'elaborazione dell'audio richiederà un po' più tempo."
           }
