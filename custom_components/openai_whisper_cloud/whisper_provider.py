@@ -15,12 +15,13 @@ class WhisperModel:
 class WhisperProvider:
     """Whisper API Provider."""
 
-    def __init__(self, name: str, url: str, models: list, default_model: int) -> None:
+    def __init__(self, name: str, url: str, models: list, default_model: int, endpoint: str = "/v1/audio/transcriptions") -> None:
         """Init."""
         self.name = name
         self.url = url
         self.models = models
         self.default_model = default_model
+        self.endpoint = endpoint
 
 
 whisper_providers = [
@@ -50,6 +51,15 @@ whisper_providers = [
             WhisperModel("voxtral-mini-latest", languages = ["en", "fr", "de", "es", "it", "pt", "nl", "hi", "ar"])
         ],
         0
+    ),
+    WhisperProvider(
+        "Cohere",
+        "https://api.cohere.com",
+        [
+            WhisperModel("cohere-transcribe-03-2026", SUPPORTED_LANGUAGES),
+        ],
+        0,
+        "/v2/audio/transcriptions",
     ),
     WhisperProvider("Custom", "", [], 0),
 ]

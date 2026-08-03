@@ -70,6 +70,8 @@ async def async_setup_entry(
             model= WhisperModel(config_entry.options[CONF_MODEL], SUPPORTED_LANGUAGES) if config_entry.data.get(CONF_CUSTOM_PROVIDER) else whisper_providers[config_entry.data[CONF_SOURCE]].models[config_entry.options[CONF_MODEL]],
             temperature=config_entry.options[CONF_TEMPERATURE],
             prompt=config_entry.options[CONF_PROMPT],
+            provider_name="Custom" if config_entry.data.get(CONF_CUSTOM_PROVIDER) else whisper_providers[config_entry.data[CONF_SOURCE]].name,
+            endpoint_path=None if config_entry.data.get(CONF_CUSTOM_PROVIDER) else whisper_providers[config_entry.data[CONF_SOURCE]].endpoint,
             name=config_entry.data[CONF_NAME],
             unique_id=config_entry.entry_id
         )
@@ -80,7 +82,7 @@ async def async_setup_entry(
 class OpenAIWhisperCloudEntity(SpeechToTextEntity):
     """OpenAI Whisper API provider entity."""
 
-    def __init__(self, custom: bool, api_url: str, api_key: str, model: WhisperModel, temperature, prompt, name, unique_id) -> None:
+    def __init__(self, custom: bool, api_url: str, api_key: str, model: WhisperModel, temperature, prompt, name, unique_id, provider_name="Custom", endpoint_path=None) -> None:
         """Init STT service."""
         self.custom = custom
         self.api_url = api_url
@@ -88,6 +90,8 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
         self.model = model
         self.temperature = temperature
         self.prompt = prompt
+        self.provider_name = provider_name
+        self.endpoint_path = endpoint_path
         self._attr_name = name
         self._attr_unique_id = unique_id
 
@@ -179,18 +183,25 @@ class OpenAIWhisperCloudEntity(SpeechToTextEntity):
                     metadata.language,
                     whisper_language,
                 )
-            data = {
-                "model": self.model.name,
-                "language": whisper_language,
-                "temperature": self.temperature,
-                "prompt": self.prompt,
-                "response_format": "json",
-            }
+            if self.provider_name == "Cohere":
+                data = {
+                    "model": self.model.name,
+                    "language": whisper_language,
+                }
+            else:
+                data = {
+                    "model": self.model.name,
+                    "language": whisper_language,
+                    "temperature": self.temperature,
+                    "prompt": self.prompt,
+                    "response_format": "json",
+                }
 
-            # Make the request in a separate thread
+            request_url = self.api_url if self.custom else f"{self.api_url}{self.endpoint_path}"
+
             response = await asyncio.to_thread(
                 requests.post,
-                f"{self.api_url}/v1/audio/transcriptions" if not self.custom else self.api_url,
+                request_url,
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                 },
