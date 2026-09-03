@@ -50,7 +50,32 @@ Currently all Mistral AI models are free up to 1 billion token per month !
 
 ## Custom
 
-Any other OpenAI compatible api
+Any OpenAI-compatible transcription API: llama.cpp server, Speaches, LocalAI, faster-whisper-server, whisper.cpp, [whisper-asr-webservice](https://github.com/ahmetoner/whisper-asr-webservice), and many more.
+
+### Configuration 📖
+
+- `url`: your server URL. Rules are predictable — a URL without a path gets the standard endpoint appended, anything else is used **as-is**:
+  - `https://your-host` → uses `https://your-host/v1/audio/transcriptions`
+  - `https://your-host/v1` → uses `https://your-host/v1/audio/transcriptions`
+  - `https://your-host/any/prefix/v1/audio/transcriptions` → used as-is
+  - `http://your-host:8000/asr` → used as-is (whisper-asr-webservice)
+- `api_key`: (Optional) leave empty if your server does not require authentication
+- `model`: (Required) any model name accepted by your server, e.g. `whisper-1`, `Systran/faster-whisper-large-v3`
+- `file_field`: (Optional, advanced) multipart field name used to upload the audio. Most OpenAI-compatible servers use `file`; whisper-asr-webservice needs `audio_file`. If unsure, keep the default `file` — the integration detects the expected field from a `422` response and retries automatically.
+
+### whisper-asr-webservice 🐳
+
+Works out of the box: set the URL to `http://your-host:8000/asr`, leave the API key empty, and pick any model name (e.g. `distil-medium.en`). The plain-text responses of its `/asr` endpoint and its `audio_file` multipart field are handled automatically.
+
+The setup performs a lenient connectivity check: servers that don't implement the `/v1/models` endpoint are still accepted, since only the transcription endpoint matters.
+
+## Upgrading from v1.x ⬆️
+
+Existing v1.x config entries are migrated automatically on restart. Migration detects the old entry format by its shape (not just the version number), so entries affected by the historical v1.3 version-bump bug are migrated correctly too:
+
+- The provider index is converted to a stable provider key
+- The selected model index is resolved to the model name
+- The provider, model, temperature and prompt settings are preserved
 
 ## How to install ⚙️
 

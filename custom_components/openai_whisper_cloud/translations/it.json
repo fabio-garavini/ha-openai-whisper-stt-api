@@ -1,82 +1,90 @@
 {
     "config": {
-      "abort": {
-        "already_configured": "Dispositivo gia' configurato",
-        "reconfigure_successful": "Dispositivo riconfigurato",
-        "reconfigure_failed": "Riconfigurazione fallita"
-      },
-      "error": {
-        "invalid_api_key": "Chiave API non valida",
-        "unauthorized": "Assicurati che la tua chiave api abbia i permessi di READ su 'Models' e di WRITE su 'Model capabilities'",
-        "whisper_not_found": "Modello Whisper non trovato"
-      },
-      "step": {
-        "user": {
-          "data": {
-            "source": "API Provider"
-          }
+        "step": {
+            "user": {
+                "title": "Whisper Cloud",
+                "description": "Seleziona il provider di speech-to-text.",
+                "data": {
+                    "provider_type": "API Provider"
+                }
+            },
+            "whisper": {
+                "title": "Configurazione provider",
+                "data": {
+                    "name": "Nome",
+                    "api_key": "Chiave API",
+                    "model": "Modello",
+                    "temperature": "Temperatura",
+                    "prompt": "Prompt (Opzionale)"
+                },
+                "data_description": {
+                    "api_key": "Chiave API per il provider selezionato.",
+                    "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`"
+                }
+            },
+            "custom": {
+                "title": "Endpoint personalizzato",
+                "data": {
+                    "name": "Nome",
+                    "url": "URL",
+                    "api_key": "Chiave API (Opzionale)",
+                    "model": "Modello",
+                    "temperature": "Temperatura",
+                    "prompt": "Prompt (Opzionale)",
+                    "file_field": "Nome del campo file audio"
+                },
+                "data_description": {
+                    "url": "URL del tuo server. Un URL senza percorso riceve automaticamente l'endpoint standard (`https://host` e `https://host/v1` diventano `https://host/v1/audio/transcriptions`); qualsiasi URL che include gia' un percorso viene usato cosi' com'e', es. `http://host:8000/asr` (whisper-asr-webservice).",
+                    "api_key": "Lascia vuoto se il tuo server non richiede una chiave API.",
+                    "model": "Nome del modello accettato dal tuo server (es. `whisper-1`, `Systran/faster-whisper-large-v3`).",
+                    "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`",
+                    "file_field": "Campo multipart usato per caricare l'audio. La maggior parte dei server compatibili OpenAI usa `file`; whisper-asr-webservice richiede `audio_file`. Se non sei sicuro, lascia `file`: l'integrazione rileva e riprova automaticamente in caso di risposta 422."
+                }
+            },
+            "reconfigure": {
+                "title": "Riconfigura",
+                "data": {
+                    "name": "Nome",
+                    "url": "URL",
+                    "api_key": "Chiave API (lascia vuoto per mantenere quella attuale)",
+                    "model": "Modello",
+                    "temperature": "Temperatura",
+                    "prompt": "Prompt (Opzionale)",
+                    "file_field": "Nome del campo file audio"
+                },
+                "data_description": {
+                    "url": "URL del tuo server. Un URL senza percorso riceve automaticamente l'endpoint standard (`https://host` e `https://host/v1` diventano `https://host/v1/audio/transcriptions`); qualsiasi URL che include gia' un percorso viene usato cosi' com'e', es. `http://host:8000/asr` (whisper-asr-webservice).",
+                    "api_key": "Lascia vuoto per mantenere la chiave API attuale.",
+                    "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`",
+                    "file_field": "Campo multipart usato per caricare l'audio. La maggior parte dei server compatibili OpenAI usa `file`; whisper-asr-webservice richiede `audio_file`. Se non sei sicuro, lascia `file`: l'integrazione rileva e riprova automaticamente in caso di risposta 422."
+                }
+            }
         },
-        "whisper": {
-          "data": {
-            "name": "Nome",
-            "url": "Url",
-            "api_key": "Chiave API",
-            "model": "Modello",
-            "temperature": "Temperatura",
-            "prompt": "Prompt (Opzionale)",
-            "reduce_noise": "Ridurre il rumore"
-          },
-          "data_description": {
-            "url": "Url completo",
-            "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`",
-            "reduce_noise": "La riduzione del rumore rimuoverà il rumore di fondo.\nL'elaborazione dell'audio richiederà un po' più tempo."
-          }
+        "abort": {
+            "reconfigure_successful": "Configurazione aggiornata, l'integrazione si sta ricaricando."
         },
-        "reconfigure": {
-          "data": {
-            "name": "Nome",
-            "url": "Url",
-            "api_key": "Chiave API (Optional)",
-            "model": "Modello",
-            "temperature": "Temperatura",
-            "prompt": "Prompt (Opzionale)",
-            "reduce_noise": "Ridurre il rumore"
-          },
-          "data_description": {
-            "url": "Url completo",
-            "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`",
-            "reduce_noise": "La riduzione del rumore rimuoverà il rumore di fondo.\nL'elaborazione dell'audio richiederà un po' più tempo."
-          }
+        "error": {
+            "invalid_api_key": "Chiave API non valida",
+            "unauthorized": "La chiave API non ha i permessi per usare questo modello",
+            "whisper_not_found": "Modello Whisper non trovato",
+            "connection_error": "Impossibile connettersi al provider, controlla l'URL e la tua rete",
+            "invalid_url": "URL non valido",
+            "unknown": "Errore imprevisto"
         }
-      }
     },
     "options": {
-      "abort": {
-        "already_configured": "Dispositivo gia' configurato",
-        "reconfigure_successful": "Dispositivo riconfigurato",
-        "reconfigure_failed": "Riconfigurazione fallita"
-      },
-      "error": {
-        "invalid_api_key": "Chiave API non valida",
-        "unauthorized": "Assicurati che la tua chiave api abbia i permessi di READ su 'Models' e di WRITE su 'Model capabilities'",
-        "whisper_not_found": "Modello Whisper non trovato"
-      },
-      "step": {
-        "init": {
-          "data": {
-            "name": "Nome",
-            "api_key": "Chiave API",
-            "model": "Modello",
-            "temperature": "Temperatura",
-            "prompt": "Prompt (Opzionale)",
-            "reduce_noise": "Ridurre il rumore"
-          },
-          "data_description": {
-            "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`",
-            "reduce_noise": "La riduzione del rumore rimuoverà il rumore di fondo.\nL'elaborazione dell'audio richiederà un po' più tempo."
-          }
+        "step": {
+            "init": {
+                "title": "Opzioni Whisper Cloud",
+                "data": {
+                    "model": "Modello",
+                    "temperature": "Temperatura",
+                    "prompt": "Prompt (Opzionale)"
+                },
+                "data_description": {
+                    "prompt": "Prompt puo' essere utilizzato per migliorare il riconoscimento di alcune parole o di nomi.\nFornisci una lista di parole o nomi separate da una virgola \", \".\nEsempio: `accendi, spegni, Chat GPT-3, DALL·E`"
+                }
+            }
         }
-      }
     }
-  }
-  
+}

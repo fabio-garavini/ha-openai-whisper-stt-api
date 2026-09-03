@@ -1,79 +1,88 @@
 {
     "config": {
-        "abort": {
-            "already_configured": "Ierīce jau ir konfigurēta",
-            "reconfigure_successful": "Pārkonfigurācija veiksmīga",
-            "reconfigure_failed": "Pārkonfigurācija neizdevās"
-        },
-        "error": {
-            "invalid_api_key": "Nederīga API atslēga",
-            "unauthorized": "Lūdzu pārliecinieties, ka jūsu api atslegai ir LASŠANAS atļauja 'Modeļiem' un RAKSTĪŠANAS atauja 'Modeļu iespējām'",
-            "whisper_not_found":  "Whisper modelis nav atrasts"
-        },
         "step": {
             "user": {
+                "title": "Whisper Cloud",
+                "description": "Izvēlieties runas atpazīšanas API piegādātāju.",
                 "data": {
-                    "source": "API piegādātājs"
+                    "provider_type": "API piegādātājs"
                 }
             },
             "whisper": {
+                "title": "Piegādātāja konfigurācija",
                 "data": {
                     "name": "Nosaukums",
-                    "url": "Url",
                     "api_key": "API atslēga",
                     "model": "Modelis",
                     "temperature": "Temperatūra",
-                    "prompt": "Uzvedne (neobligāts)",
-                    "reduce_noise": "Samazināt troksni"
+                    "prompt": "Uzvedne (neobligāts)"
                 },
                 "data_description": {
-                    "url": "Pilna api adrese",
+                    "api_key": "Atlasītā piegādātāja API atslēga.",
+                    "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`"
+                }
+            },
+            "custom": {
+                "title": "Pielāgots galapunkts",
+                "data": {
+                    "name": "Nosaukums",
+                    "url": "URL",
+                    "api_key": "API atslēga (neobligāts)",
+                    "model": "Modelis",
+                    "temperature": "Temperatūra",
+                    "prompt": "Uzvedne (neobligāts)",
+                    "file_field": "Audio faila lauka nosaukums"
+                },
+                "data_description": {
+                    "url": "Jūsu servera URL. URL bez ceļa automātiski saņem standarta galapunktu (`https://host` un `https://host/v1` kļūst par `https://host/v1/audio/transcriptions`); jebkurš URL, kas jau satur ceļu, tiek lietots tāds, kāds tas ir, piem., `http://host:8000/asr` (whisper-asr-webservice).",
+                    "api_key": "Atstājiet tukšu, ja jūsu serveris neprasa API atslēgu.",
+                    "model": "Modeļa nosaukums, ko atbalsta jūsu serveris (piem., `whisper-1`, `Systran/faster-whisper-large-v3`).",
                     "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`",
-                    "reduce_noise": "Trokšņu samazināšana noņems fona trokšņus.\nAudio apstrāde aizņems nedaudz ilgāk."
+                    "file_field": "Multipart lauks, ko izmanto audio augšupielādei. Lielākā daļa OpenAI saderīgu serveru izmanto `file`; whisper-asr-webservice pieprasa `audio_file`. Ja neesat pārliecināts, atstājiet `file`: integrācija automātiski atklāj un mēģina vēlreiz pēc 422 atbildes."
                 }
             },
             "reconfigure": {
+                "title": "Pārkonfigurēt",
                 "data": {
                     "name": "Nosaukums",
-                    "url": "Url",
-                    "api_key": "API atslēga",
+                    "url": "URL",
+                    "api_key": "API atslēga (atstājiet tukšu, lai paturētu esošo)",
                     "model": "Modelis",
                     "temperature": "Temperatūra",
                     "prompt": "Uzvedne (neobligāts)",
-                    "reduce_noise": "Samazināt troksni"
+                    "file_field": "Audio faila lauka nosaukums"
                 },
                 "data_description": {
-                    "url": "Pilna api adrese",
+                    "url": "Jūsu servera URL. URL bez ceļa automātiski saņem standarta galapunktu (`https://host` un `https://host/v1` kļūst par `https://host/v1/audio/transcriptions`); jebkurš URL, kas jau satur ceļu, tiek lietots tāds, kāds tas ir, piem., `http://host:8000/asr` (whisper-asr-webservice).",
+                    "api_key": "Atstājiet tukšu, lai paturētu esošo API atslēgu.",
                     "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`",
-                    "reduce_noise": "Trokšņu samazināšana noņems fona trokšņus.\nAudio apstrāde aizņems nedaudz ilgāk."
+                    "file_field": "Multipart lauks, ko izmanto audio augšupielādei. Lielākā daļa OpenAI saderīgu serveru izmanto `file`; whisper-asr-webservice pieprasa `audio_file`. Ja neesat pārliecināts, atstājiet `file`: integrācija automātiski atklāj un mēģina vēlreiz pēc 422 atbildes."
                 }
             }
+        },
+        "abort": {
+            "reconfigure_successful": "Konfigurācija atjaunināta, integrācija tiek pārlādēta."
+        },
+        "error": {
+            "invalid_api_key": "Nederīga API atslēga",
+            "unauthorized": "API atslēgai nav atļaujas izmantot šo modeli",
+            "whisper_not_found": "Whisper modelis nav atrasts",
+            "connection_error": "Nevar izveidot savienojumu ar piegādātāju, pārbaudiet URL un tīklu",
+            "invalid_url": "Nederīgs URL",
+            "unknown": "Negaidīta kļūda"
         }
     },
     "options": {
-        "abort": {
-            "already_configured": "Device is already configured",
-            "reconfigure_successful": "Reconfigured",
-            "reconfigure_failed": "Reconfiguration failed"
-        },
-        "error": {
-            "invalid_api_key": "Invalid API Key",
-            "unauthorized": "Make sure your api key has READ permission to 'Models' and WRITE permission to 'Model capabilities'",
-            "whisper_not_found":  "Whisper model not found"
-        },
         "step": {
             "init": {
+                "title": "Whisper Cloud iestatījumi",
                 "data": {
-                    "name": "Nosaukums",
-                    "api_key": "API atslēga",
                     "model": "Modelis",
                     "temperature": "Temperatūra",
-                    "prompt": "Uzvedne (neobligāts)",
-                    "reduce_noise": "Samazināt troksni"
+                    "prompt": "Uzvedne (neobligāts)"
                 },
                 "data_description": {
-                    "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`",
-                    "reduce_noise": "Trokšņu samazināšana noņems fona trokšņus.\nAudio apstrāde aizņems nedaudz ilgāk."
+                    "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`"
                 }
             }
         }
