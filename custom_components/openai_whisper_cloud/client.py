@@ -20,6 +20,7 @@ The client implements two upload strategies:
 from __future__ import annotations
 
 import asyncio
+import base64
 from collections.abc import AsyncIterable, AsyncIterator
 import json
 import logging
@@ -33,11 +34,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
-    MAX_AUDIO_SIZE_BYTES,
     REQUEST_TIMEOUT,
     TRANSCRIPTION_TIMEOUT,
 )
-from .whisper_provider import WhisperProvider
+from .whisper_provider import ApiStyle, WhisperProvider
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -198,7 +198,7 @@ class WhisperTranscriptionClient:
         except AudioTooLargeError:
             _LOGGER.error(
                 "Audio stream exceeds the maximum allowed size of %.1f MB",
-                MAX_AUDIO_SIZE_BYTES / (1024 * 1024),
+                self._provider.max_audio_bytes / (1024 * 1024),
             )
             return None
         except (TimeoutError, aiohttp.ClientError) as err:
@@ -241,7 +241,7 @@ class WhisperTranscriptionClient:
             async for chunk in stream:
                 size += len(chunk)
                 chunks.append(chunk)
-                if size > MAX_AUDIO_SIZE_BYTES:
+                if size > self._provider.max_audio_bytes:
                     too_large = True
                     raise AudioTooLargeError
                 yield chunk
@@ -319,19 +319,22 @@ class WhisperTranscriptionClient:
     async def _post_with_retries(
         self, wav_data: bytes, *, language: str | None, prompt: str
     ) -> aiohttp.ClientResponse:
-        """Post the buffered form, retrying once on recoverable responses.
+        """Post the buffered request, retrying once on recoverable responses.
 
         Two cases are worth a retry: a 422 that names the multipart field
         the server expects (learned and used from then on), and rate
         limiting or transient server errors (honoring Retry-After).
         """
+        request_kwargs = await self._prepare_request(
+            wav_data, language=language, prompt=prompt
+        )
         response: aiohttp.ClientResponse
         for attempt in (1, 2):
             response = await self._session.post(
                 self._provider.transcription_url,
-                data=self._build_form(wav_data, language, prompt),
                 headers=self._headers,
                 timeout=BUFFERED_TIMEOUT,
+                **request_kwargs,
             )
             if attempt == 2:
                 break
@@ -352,6 +355,49 @@ class WhisperTranscriptionClient:
                 continue
             break
         return response
+
+    async def _prepare_request(
+        self, wav_data: bytes, *, language: str | None, prompt: str
+    ) -> dict[str, Any]:
+        """Build the POST keyword arguments for a transcription request.
+
+        Multipart providers receive a form; chat completions providers
+        receive a JSON body with the audio as a base64 encoded data URL.
+        """
+        if self._provider.api_style == ApiStyle.CHAT_COMPLETIONS:
+            audio_b64 = await self._hass.async_add_executor_job(
+                base64.b64encode, wav_data
+            )
+            return {"json": self._build_chat_payload(audio_b64.decode(), language)}
+        return {"data": self._build_form(wav_data, language, prompt)}
+
+    def _build_chat_payload(
+        self, audio_b64: str, language: str | None
+    ) -> dict[str, Any]:
+        """Build a chat completions request for providers like Xiaomi MiMo."""
+        payload: dict[str, Any] = {
+            "model": self._model_name,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_audio",
+                            "input_audio": {
+                                "data": f"data:audio/wav;base64,{audio_b64}",
+                                "format": "wav",
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+        # The API only accepts "zh" and "en"; anything else (including no
+        # language at all) is left to the automatic detection, which is the
+        # documented default when the option is omitted.
+        if language and (base := language.split("-")[0]) in ("zh", "en"):
+            payload["asr_options"] = {"language": base}
+        return payload
 
     def _build_form(
         self, wav_data: bytes, language: str | None, prompt: str
@@ -409,7 +455,7 @@ class WhisperTranscriptionClient:
         async for chunk in stream:
             size += len(chunk)
             chunks.append(chunk)
-            if size > MAX_AUDIO_SIZE_BYTES:
+            if size > self._provider.max_audio_bytes:
                 raise AudioTooLargeError
         return chunks
 
@@ -422,7 +468,17 @@ class WhisperTranscriptionClient:
             # Plain text response (e.g. whisper-asr-webservice /asr)
             result = body
         if isinstance(result, dict):
-            transcription = result.get("text", "")
+            if "text" in result:
+                # Transcription endpoint ({"text": "..."})
+                transcription = str(result["text"])
+            elif "choices" in result:
+                # Chat completions endpoint (e.g. Xiaomi MiMo ASR)
+                try:
+                    transcription = str(result["choices"][0]["message"]["content"])
+                except (KeyError, IndexError, TypeError):
+                    transcription = ""
+            else:
+                transcription = ""
         else:
             transcription = str(result).strip()
         if not transcription:
@@ -455,6 +511,9 @@ class WhisperTranscriptionClient:
         return (
             self._streaming
             and self._provider.supports_streaming
+            # Streaming uploads are implemented for multipart transcription
+            # endpoints only; chat completions payloads are always buffered.
+            and self._provider.api_style == ApiStyle.TRANSCRIPTIONS
             and self._streaming_supported is not False
         )
 

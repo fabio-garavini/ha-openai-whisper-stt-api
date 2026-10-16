@@ -115,7 +115,10 @@ async def validate_builtin_provider(
 ) -> None:
     """Verify the API key and the selected model exist on a builtin provider."""
     session = async_get_clientsession(hass)
-    url = f"{provider.base_url.rstrip('/')}/v1/models/{model_name}"
+    models_url = f"{provider.base_url.rstrip('/')}/v1/models"
+    # Providers without a GET /v1/models/{id} endpoint (e.g. Xiaomi MiMo)
+    # are validated against the model list instead.
+    url = models_url if provider.list_models_only else f"{models_url}/{model_name}"
     headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
     try:
         response = await session.get(
@@ -139,6 +142,18 @@ async def validate_builtin_provider(
         raise WhisperModelNotFound
     if response.status != 200:
         raise CannotConnect
+
+    if provider.list_models_only:
+        try:
+            models = (await response.json()).get("data", [])
+            model_ids = [model.get("id") for model in models if isinstance(model, dict)]
+        except (ValueError, AttributeError, TypeError):
+            # Unexpected payload shape: accept the endpoint and let a
+            # wrong model fail loudly at transcription time.
+            _LOGGER.debug("Model list on %s had an unexpected shape", models_url)
+            return
+        if model_name not in model_ids:
+            raise WhisperModelNotFound
 
 
 async def validate_custom_provider(

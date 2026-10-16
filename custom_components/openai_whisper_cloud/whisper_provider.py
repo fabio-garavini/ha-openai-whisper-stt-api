@@ -3,11 +3,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
 import re
 from typing import Final
 from urllib.parse import urlparse
 
-from .const import SUPPORTED_LANGUAGES
+from .const import MAX_AUDIO_SIZE_BYTES, MIMO_MAX_AUDIO_BYTES, SUPPORTED_LANGUAGES
+
+
+class ApiStyle(str, Enum):
+    """Request style of a provider's speech recognition endpoint."""
+
+    # OpenAI compatible /v1/audio/transcriptions with a multipart form.
+    TRANSCRIPTIONS = "transcriptions"
+    # OpenAI compatible chat completions with the audio as a base64
+    # encoded input_audio content part (e.g. Xiaomi MiMo).
+    CHAT_COMPLETIONS = "chat_completions"
 
 
 @dataclass(frozen=True)
@@ -28,11 +39,17 @@ class WhisperProvider:
     models: tuple[WhisperModel, ...] = ()
     default_model: str = ""
     transcription_path: str = "/v1/audio/transcriptions"
+    api_style: ApiStyle = ApiStyle.TRANSCRIPTIONS
     supports_temperature: bool = True
     supports_prompt: bool = True
     supports_response_format: bool = True
     supports_streaming: bool = True
     multipart_file_field: str = "file"
+    # Largest accepted audio payload in bytes.
+    max_audio_bytes: int = MAX_AUDIO_SIZE_BYTES
+    # Providers without a GET /v1/models/{id} endpoint; the config flow
+    # validates the model against the GET /v1/models list instead.
+    list_models_only: bool = False
     custom: bool = False
 
     @property
@@ -94,6 +111,20 @@ def get_provider(key: str) -> WhisperProvider:
     return PROVIDERS.get(key, PROVIDERS["openai"])
 
 
+# MiMo recognizes Chinese and English. The API language parameter only
+# accepts "zh"/"en"/"auto"; the Chinese regional variants are declared so
+# Home Assistant pipelines in those locales pass the metadata check, and
+# the client folds them down to "zh" when building the request.
+MIMO_ASR_LANGUAGES: Final = [
+    "en",
+    "zh",
+    "zh-cn",
+    "zh-tw",
+    "zh-hk",
+    "zh-hans",
+    "zh-hant",
+]
+
 PROVIDERS: Final[dict[str, WhisperProvider]] = {
     provider.key: provider
     for provider in (
@@ -141,6 +172,26 @@ PROVIDERS: Final[dict[str, WhisperProvider]] = {
             supports_prompt=False,
             supports_response_format=False,
             supports_streaming=False,
+        ),
+        WhisperProvider(
+            key="xiaomimimo",
+            name="Xiaomi MiMo",
+            base_url="https://api.xiaomimimo.com",
+            models=(
+                WhisperModel(
+                    "mimo-v2.5-asr",
+                    languages=MIMO_ASR_LANGUAGES,
+                ),
+            ),
+            default_model="mimo-v2.5-asr",
+            transcription_path="/v1/chat/completions",
+            api_style=ApiStyle.CHAT_COMPLETIONS,
+            supports_temperature=False,
+            supports_prompt=False,
+            supports_response_format=False,
+            supports_streaming=False,
+            max_audio_bytes=MIMO_MAX_AUDIO_BYTES,
+            list_models_only=True,
         ),
         WhisperProvider(key="custom", name="Custom", custom=True),
     )

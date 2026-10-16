@@ -26,6 +26,9 @@ DEFAULT_CUSTOM_MODEL: Final = "whisper-1"
 REQUEST_TIMEOUT: Final = 30
 TRANSCRIPTION_TIMEOUT: Final = 60
 MAX_AUDIO_SIZE_BYTES: Final = int(24.5 * 1024 * 1024)
+# Xiaomi MiMo accepts at most 10 MB of *encoded* audio; base64 inflates
+# the payload by 4/3, so the raw audio must stay below 7.5 MB.
+MIMO_MAX_AUDIO_BYTES: Final = (10 * 1024 * 1024 * 3) // 4
 
 # Config entry version this release migrates to
 CONFIG_VERSION: Final = 2

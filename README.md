@@ -7,6 +7,8 @@ This HA custom integration lets you use any compatible OpenAI API (OpenAI, GroqC
 - *OpenAI*
 - *GroqCloud*
 - *Mistral AI*
+- *Cohere*
+- *Xiaomi MiMo*
 - *Custom*
 
 ## OpenAI
@@ -47,6 +49,32 @@ Currently all GroqCloud Whisper models are free up to 28800 audio seconds per da
 Currently all Mistral AI models are free up to 1 billion token per month !
 
 - `voxtral-mini`
+
+## Cohere
+
+### Requirements 📖
+
+- A Cohere account and an API key from the [Cohere dashboard](https://dashboard.cohere.com/api-keys)
+
+### Models
+
+- `cohere-transcribe-03-2026` — served through Cohere's v2 audio API. The API does not accept a prompt, temperature, or streamed uploads, so those options are not shown for this provider.
+
+## Xiaomi MiMo
+
+### Requirements 📖
+
+- A Xiaomi MiMo account 👤 and an `API Key` 🔑 from the [MiMo open platform](https://platform.xiaomimimo.com/)
+
+### Models
+
+- `mimo-v2.5-asr` — bilingual Chinese/English recognition with automatic language detection. It natively recognizes Cantonese, Wu, Minnan, Sichuan and other Chinese dialects, stays stable in noisy environments, far-field pickup and overlapping speakers, and handles specialized content like technical terminology and proper nouns.
+
+**How it works**: unlike the other providers, MiMo serves speech recognition through the OpenAI compatible chat completions API — the audio is sent as a base64 encoded WAV in an `input_audio` content part, and the transcription comes back in `choices[0].message.content`. Because of this:
+
+- the multipart-specific options (prompt, temperature, streamed upload) do not apply and are not shown
+- the encoded audio must stay under 10 MB, so recordings are capped at 7.5 MB (about 4 minutes of 16 kHz mono audio)
+- the language option only accepts `zh` and `en`; everything else is left to MiMo's automatic detection
 
 ## Custom
 
