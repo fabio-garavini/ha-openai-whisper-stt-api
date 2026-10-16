@@ -24,10 +24,11 @@ from homeassistant.components.stt import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_KEY, CONF_MODEL, CONF_NAME
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.template import Template, TemplateError, is_template_string
 
 from .const import (
     CONF_BASE_URL,
@@ -41,7 +42,12 @@ from .const import (
     MAX_AUDIO_SIZE_BYTES,
     TRANSCRIPTION_TIMEOUT,
 )
-from .whisper_provider import WhisperModel, WhisperProvider, custom_provider, get_provider
+from .whisper_provider import (
+    WhisperModel,
+    WhisperProvider,
+    custom_provider,
+    get_provider,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -91,6 +97,34 @@ def resolve_language(language: str | None, supported: list[str]) -> str | None:
     if base in supported:
         return base
     return lang
+
+
+@callback
+def resolve_prompt(hass: HomeAssistant, prompt: str) -> str:
+    """Return the prompt to send with a transcription request.
+
+    The prompt may contain Home Assistant templates (e.g. built from sensors
+    that list entity names), so it can stay in sync with the home without
+    manual edits. Templates are rendered fresh for every transcription,
+    which means the prompt always reflects the current state and entity
+    names are picked up as soon as they are added or renamed.
+
+    A prompt without template syntax is returned unchanged. A template
+    that fails to render is logged and skipped instead of failing the
+    whole transcription.
+    """
+    if not prompt or not is_template_string(prompt):
+        return prompt
+    try:
+        rendered = Template(prompt, hass).async_render(parse_result=False)
+    except TemplateError as err:
+        _LOGGER.warning(
+            "Transcribing without a prompt because its template failed to render: %s",
+            err,
+        )
+        return ""
+    _LOGGER.debug("Rendered prompt template to %d characters", len(rendered))
+    return rendered
 
 
 def encode_wav(data: bytes, channels: int, sample_rate: int) -> bytes:
@@ -208,7 +242,7 @@ class OpenAIWhisperEntity(SpeechToTextEntity):
         return [AudioChannels.CHANNEL_MONO, AudioChannels.CHANNEL_STEREO]
 
     def _build_form(
-        self, wav_data: bytes, language: str | None, file_field: str
+        self, wav_data: bytes, language: str | None, file_field: str, prompt: str
     ) -> aiohttp.FormData:
         """Build the multipart form for a transcription request."""
         form = aiohttp.FormData()
@@ -220,8 +254,8 @@ class OpenAIWhisperEntity(SpeechToTextEntity):
             form.add_field("language", language)
         if self.provider.supports_temperature:
             form.add_field("temperature", str(self.temperature))
-        if self.provider.supports_prompt and self.prompt:
-            form.add_field("prompt", self.prompt)
+        if self.provider.supports_prompt and prompt:
+            form.add_field("prompt", prompt)
         if self.provider.supports_response_format:
             form.add_field("response_format", "json")
         return form
@@ -249,13 +283,15 @@ class OpenAIWhisperEntity(SpeechToTextEntity):
             return SpeechResult("", SpeechResultState.ERROR)
 
         wav_data = await self.hass.async_add_executor_job(
-            encode_wav, b"".join(chunks), int(metadata.channel), int(metadata.sample_rate)
+            encode_wav,
+            b"".join(chunks),
+            int(metadata.channel),
+            int(metadata.sample_rate),
         )
-        _LOGGER.debug(
-            "Encoded %.2f MB of audio to WAV", len(wav_data) / (1024 * 1024)
-        )
+        _LOGGER.debug("Encoded %.2f MB of audio to WAV", len(wav_data) / (1024 * 1024))
 
         language = resolve_language(metadata.language, self.model.languages)
+        prompt = resolve_prompt(self.hass, self.prompt)
 
         headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
         session = async_get_clientsession(self.hass)
@@ -264,7 +300,7 @@ class OpenAIWhisperEntity(SpeechToTextEntity):
         try:
             response = await session.post(
                 self.provider.transcription_url,
-                data=self._build_form(wav_data, language, file_field),
+                data=self._build_form(wav_data, language, file_field, prompt),
                 headers=headers,
                 timeout=aiohttp.ClientTimeout(total=TRANSCRIPTION_TIMEOUT),
             )
@@ -280,7 +316,7 @@ class OpenAIWhisperEntity(SpeechToTextEntity):
                     file_field = missing
                     response = await session.post(
                         self.provider.transcription_url,
-                        data=self._build_form(wav_data, language, file_field),
+                        data=self._build_form(wav_data, language, file_field, prompt),
                         headers=headers,
                         timeout=aiohttp.ClientTimeout(total=TRANSCRIPTION_TIMEOUT),
                     )
@@ -304,7 +340,12 @@ class OpenAIWhisperEntity(SpeechToTextEntity):
                 transcription = result.get("text", "")
             else:
                 transcription = str(result).strip()
-        except (TimeoutError, asyncio.TimeoutError, aiohttp.ClientError, ValueError) as err:
+        except (
+            TimeoutError,
+            asyncio.TimeoutError,
+            aiohttp.ClientError,
+            ValueError,
+        ) as err:
             _LOGGER.error("Error during transcription: %s", err)
             return SpeechResult("", SpeechResultState.ERROR)
 

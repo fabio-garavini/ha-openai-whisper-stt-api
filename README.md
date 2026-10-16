@@ -115,6 +115,22 @@ These are the parameters that you can configure:
   <br>You have to provide a list of words or names separated by a comma `, `
   <br>Example: `"open, close, Chat GPT-3, DALL·E"`.
 
+  The prompt can also be a Home Assistant **template**, which is rendered fresh before *every* transcription. This lets you bias the model with the words that actually exist in your home (entity, area or script names) without maintaining the list by hand, e.g.:
+
+  ```yaml
+  {{ states('sensor.room_names') }},{{ states('sensor.entity_names') }},{{ states('sensor.script_names') }}
+  ```
+
+  Splitting the names across multiple template sensors is a good way to get around the 255 character limit of a single sensor state. Templates can also build the list directly from your entities, e.g. all light and script names:
+
+  ```yaml
+  {{ states.light | map(attribute='name') | join(', ') }},{{ states.script | map(attribute='name') | join(', ') }}
+  ```
+
+  Plain text, templates, or a mix of both all work. Because templates are evaluated at transcription time (not at startup), newly added or renamed entities are picked up automatically, and entities that are not yet set up when the integration loads can never break the prompt. The template syntax is validated when you save the settings, and a template that fails to render is logged and skipped instead of failing the transcription.
+
+  **Note**: transcription APIs limit the prompt size (`whisper-1` accepts about 224 tokens, the `gpt-4o-*` models 1024), so keep the generated list focused on the words you actually speak.
+
 Now you can set it up through your Home Assistant Dashboard (YAML configuration not supported).
 
 ### Home Assistant Dashboard 💻

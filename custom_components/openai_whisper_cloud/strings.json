@@ -19,7 +19,7 @@
                 },
                 "data_description": {
                     "api_key": "API key for the selected provider.",
-                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`"
+                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`.\nIt can also contain Home Assistant templates that are rendered before each transcription, so the list can stay in sync with your home automatically, e.g. `{{ states('sensor.room_names') }}, {{ states('sensor.entity_names') }}`."
                 }
             },
             "custom": {
@@ -37,7 +37,7 @@
                     "url": "Your server URL. A URL without a path gets the standard endpoint appended (`https://host` and `https://host/v1` both become `https://host/v1/audio/transcriptions`); any URL that already includes a path is used as-is, e.g. `http://host:8000/asr` (whisper-asr-webservice).",
                     "api_key": "Leave empty if your server does not require an API key.",
                     "model": "Model name accepted by your server (e.g. `whisper-1`, `Systran/faster-whisper-large-v3`).",
-                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`",
+                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`.\nIt can also contain Home Assistant templates that are rendered before each transcription, so the list can stay in sync with your home automatically, e.g. `{{ states('sensor.room_names') }}, {{ states('sensor.entity_names') }}`.",
                     "file_field": "Multipart field used to upload the audio. Most OpenAI-compatible servers use `file`; whisper-asr-webservice needs `audio_file`. If unsure, keep `file`: the integration detects and retries automatically on a 422 response."
                 }
             },
@@ -55,7 +55,7 @@
                 "data_description": {
                     "url": "Your server URL. A URL without a path gets the standard endpoint appended (`https://host` and `https://host/v1` both become `https://host/v1/audio/transcriptions`); any URL that already includes a path is used as-is, e.g. `http://host:8000/asr` (whisper-asr-webservice).",
                     "api_key": "Leave blank to keep the current API key.",
-                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`",
+                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`.\nIt can also contain Home Assistant templates that are rendered before each transcription, so the list can stay in sync with your home automatically, e.g. `{{ states('sensor.room_names') }}, {{ states('sensor.entity_names') }}`.",
                     "file_field": "Multipart field used to upload the audio. Most OpenAI-compatible servers use `file`; whisper-asr-webservice needs `audio_file`. If unsure, keep `file`: the integration detects and retries automatically on a 422 response."
                 }
             }
@@ -69,6 +69,7 @@
             "whisper_not_found": "Whisper model not found",
             "connection_error": "Cannot connect to the provider, check the URL and your network",
             "invalid_url": "Invalid URL",
+            "invalid_prompt_template": "The prompt contains an invalid template",
             "unknown": "Unexpected error"
         }
     },
@@ -82,7 +83,7 @@
                     "prompt": "Prompt (Optional)"
                 },
                 "data_description": {
-                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`"
+                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`.\nIt can also contain Home Assistant templates that are rendered before each transcription, so the list can stay in sync with your home automatically, e.g. `{{ states('sensor.room_names') }}, {{ states('sensor.entity_names') }}`."
                 }
             }
         }

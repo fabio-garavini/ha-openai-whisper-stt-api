@@ -25,7 +25,11 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
 )
+from homeassistant.helpers.template import Template, TemplateError, is_template_string
 
 from .const import (
     CONF_BASE_URL,
@@ -60,7 +64,31 @@ PROVIDER_SELECTION_SCHEMA = vol.Schema(
     }
 )
 
+# The prompt may contain long Home Assistant templates, so offer a
+# multiline editor instead of a single line text box.
+PROMPT_SELECTOR = TextSelector(
+    TextSelectorConfig(multiline=True, type=TextSelectorType.TEXT)
+)
+
 TEMPERATURE_SCHEMA = vol.All(vol.Coerce(float), vol.Range(min=0, max=1))
+
+
+@callback
+def validate_prompt(hass: HomeAssistant, prompt: str) -> str | None:
+    """Check the prompt; return a form error key or None if it is valid.
+
+    A prompt without template syntax is always valid. A prompt that
+    contains templates must at least be syntactically correct; rendering
+    happens at transcription time, so referenced entities do not need to
+    exist yet when the settings are saved.
+    """
+    if not prompt or not is_template_string(prompt):
+        return None
+    try:
+        Template(prompt, hass).ensure_valid()
+    except TemplateError:
+        return "invalid_prompt_template"
+    return None
 
 
 class CannotConnect(exceptions.HomeAssistantError):
@@ -124,7 +152,10 @@ async def validate_custom_provider(
     # If the user already included a version prefix, also try the unversioned
     # models path before giving up.
     candidates = [f"{base}/v1/models"]
-    if base.rsplit("/", 1)[-1].startswith("v") and base.rsplit("/", 1)[-1][1:].isdigit():
+    if (
+        base.rsplit("/", 1)[-1].startswith("v")
+        and base.rsplit("/", 1)[-1][1:].isdigit()
+    ):
         candidates.insert(0, f"{base}/models")
 
     headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
@@ -159,13 +190,17 @@ def _builtin_schema(provider: WhisperProvider, api_key_optional: bool) -> vol.Sc
     return vol.Schema(
         {
             vol.Required(CONF_NAME, default=f"{provider.name} Whisper"): cv.string,
-            vol.Required(CONF_API_KEY) if not api_key_optional else vol.Optional(CONF_API_KEY): cv.string,
+            vol.Required(CONF_API_KEY)
+            if not api_key_optional
+            else vol.Optional(CONF_API_KEY): cv.string,
             vol.Required(
                 CONF_MODEL,
                 default=provider.default_model,
             ): vol.In([model.name for model in provider.models]),
-            vol.Optional(CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE): TEMPERATURE_SCHEMA,
-            vol.Optional(CONF_PROMPT, default=DEFAULT_PROMPT): cv.string,
+            vol.Optional(
+                CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE
+            ): TEMPERATURE_SCHEMA,
+            vol.Optional(CONF_PROMPT, default=DEFAULT_PROMPT): PROMPT_SELECTOR,
         }
     )
 
@@ -177,7 +212,7 @@ CUSTOM_SCHEMA = vol.Schema(
         vol.Optional(CONF_API_KEY): cv.string,
         vol.Required(CONF_MODEL, default=DEFAULT_CUSTOM_MODEL): cv.string,
         vol.Optional(CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE): TEMPERATURE_SCHEMA,
-        vol.Optional(CONF_PROMPT, default=DEFAULT_PROMPT): cv.string,
+        vol.Optional(CONF_PROMPT, default=DEFAULT_PROMPT): PROMPT_SELECTOR,
         vol.Optional(CONF_FILE_FIELD, default="file"): cv.string,
     }
 )
@@ -192,8 +227,14 @@ class OptionsFlowHandler(OptionsFlowWithConfigEntry):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Manage the provider options."""
+        errors: dict[str, str] = {}
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            prompt_error = validate_prompt(
+                self.hass, user_input.get(CONF_PROMPT, DEFAULT_PROMPT)
+            )
+            if prompt_error is None:
+                return self.async_create_entry(title="", data=user_input)
+            errors[CONF_PROMPT] = prompt_error
 
         provider = get_provider(self.config_entry.data[CONF_PROVIDER_TYPE])
         current_model = self.config_entry.options.get(
@@ -222,9 +263,15 @@ class OptionsFlowHandler(OptionsFlowWithConfigEntry):
                 CONF_PROMPT,
                 default=self.config_entry.options.get(CONF_PROMPT, DEFAULT_PROMPT),
             )
-        ] = cv.string
+        ] = PROMPT_SELECTOR
 
-        return self.async_show_form(step_id="init", data_schema=vol.Schema(schema))
+        return self.async_show_form(
+            step_id="init",
+            data_schema=self.add_suggested_values_to_schema(
+                vol.Schema(schema), user_input or {}
+            ),
+            errors=errors,
+        )
 
 
 class ConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -269,38 +316,46 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            try:
-                await validate_builtin_provider(
-                    self.hass,
-                    provider,
-                    user_input[CONF_MODEL],
-                    user_input.get(CONF_API_KEY, ""),
-                )
-            except CannotConnect:
-                errors["base"] = "connection_error"
-            except InvalidAPIKey:
-                errors[CONF_API_KEY] = "invalid_api_key"
-            except UnauthorizedError:
-                errors["base"] = "unauthorized"
-            except WhisperModelNotFound:
-                errors["base"] = "whisper_not_found"
+            prompt_error = validate_prompt(
+                self.hass, user_input.get(CONF_PROMPT, DEFAULT_PROMPT)
+            )
+            if prompt_error is None:
+                try:
+                    await validate_builtin_provider(
+                        self.hass,
+                        provider,
+                        user_input[CONF_MODEL],
+                        user_input.get(CONF_API_KEY, ""),
+                    )
+                except CannotConnect:
+                    errors["base"] = "connection_error"
+                except InvalidAPIKey:
+                    errors[CONF_API_KEY] = "invalid_api_key"
+                except UnauthorizedError:
+                    errors["base"] = "unauthorized"
+                except WhisperModelNotFound:
+                    errors["base"] = "whisper_not_found"
+                else:
+                    return self.async_create_entry(
+                        title=user_input[CONF_NAME],
+                        data={
+                            CONF_PROVIDER_TYPE: provider.key,
+                            CONF_NAME: user_input[CONF_NAME],
+                            CONF_API_KEY: user_input.get(CONF_API_KEY, ""),
+                        },
+                        options={
+                            CONF_MODEL: user_input[CONF_MODEL],
+                            CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
+                            CONF_PROMPT: user_input.get(CONF_PROMPT, DEFAULT_PROMPT),
+                        },
+                    )
             else:
-                return self.async_create_entry(
-                    title=user_input[CONF_NAME],
-                    data={
-                        CONF_PROVIDER_TYPE: provider.key,
-                        CONF_NAME: user_input[CONF_NAME],
-                        CONF_API_KEY: user_input.get(CONF_API_KEY, ""),
-                    },
-                    options={
-                        CONF_MODEL: user_input[CONF_MODEL],
-                        CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
-                        CONF_PROMPT: user_input.get(CONF_PROMPT, DEFAULT_PROMPT),
-                    },
-                )
+                errors[CONF_PROMPT] = prompt_error
 
         return self.async_show_form(
-            step_id="whisper", data_schema=_builtin_schema(provider, False), errors=errors
+            step_id="whisper",
+            data_schema=_builtin_schema(provider, False),
+            errors=errors,
         )
 
     async def async_step_custom(
@@ -311,35 +366,43 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             base_url = user_input[CONF_URL].strip().rstrip("/")
-            try:
-                cv.url(user_input[CONF_URL])
-                await validate_custom_provider(
-                    self.hass, base_url, user_input.get(CONF_API_KEY, "")
-                )
-            except vol.Invalid:
-                errors[CONF_URL] = "invalid_url"
-            except CannotConnect:
-                errors["base"] = "connection_error"
-            except InvalidAPIKey:
-                errors[CONF_API_KEY] = "invalid_api_key"
+            prompt_error = validate_prompt(
+                self.hass, user_input.get(CONF_PROMPT, DEFAULT_PROMPT)
+            )
+            if prompt_error is None:
+                try:
+                    cv.url(user_input[CONF_URL])
+                    await validate_custom_provider(
+                        self.hass, base_url, user_input.get(CONF_API_KEY, "")
+                    )
+                except vol.Invalid:
+                    errors[CONF_URL] = "invalid_url"
+                except CannotConnect:
+                    errors["base"] = "connection_error"
+                except InvalidAPIKey:
+                    errors[CONF_API_KEY] = "invalid_api_key"
+                else:
+                    return self.async_create_entry(
+                        title=user_input[CONF_NAME],
+                        data={
+                            CONF_PROVIDER_TYPE: "custom",
+                            CONF_NAME: user_input[CONF_NAME],
+                            CONF_BASE_URL: base_url,
+                            CONF_API_KEY: user_input.get(CONF_API_KEY, ""),
+                            CONF_FILE_FIELD: user_input.get(CONF_FILE_FIELD, "file"),
+                        },
+                        options={
+                            CONF_MODEL: user_input[CONF_MODEL],
+                            CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
+                            CONF_PROMPT: user_input.get(CONF_PROMPT, DEFAULT_PROMPT),
+                        },
+                    )
             else:
-                return self.async_create_entry(
-                    title=user_input[CONF_NAME],
-                    data={
-                        CONF_PROVIDER_TYPE: "custom",
-                        CONF_NAME: user_input[CONF_NAME],
-                        CONF_BASE_URL: base_url,
-                        CONF_API_KEY: user_input.get(CONF_API_KEY, ""),
-                        CONF_FILE_FIELD: user_input.get(CONF_FILE_FIELD, "file"),
-                    },
-                    options={
-                        CONF_MODEL: user_input[CONF_MODEL],
-                        CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
-                        CONF_PROMPT: user_input.get(CONF_PROMPT, DEFAULT_PROMPT),
-                    },
-                )
+                errors[CONF_PROMPT] = prompt_error
 
-        return self.async_show_form(step_id="custom", data_schema=CUSTOM_SCHEMA, errors=errors)
+        return self.async_show_form(
+            step_id="custom", data_schema=CUSTOM_SCHEMA, errors=errors
+        )
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -351,69 +414,78 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
         provider = get_provider(entry.data[CONF_PROVIDER_TYPE])
 
         if user_input is not None:
-            try:
-                api_key = (
-                    user_input.get(CONF_API_KEY) or entry.data.get(CONF_API_KEY, "")
-                )
-                if provider.custom:
-                    base_url = user_input[CONF_URL].strip().rstrip("/")
-                    cv.url(user_input[CONF_URL])
-                    await validate_custom_provider(self.hass, base_url, api_key)
-                    new_data: dict[str, Any] = {
-                        CONF_PROVIDER_TYPE: provider.key,
-                        CONF_NAME: user_input[CONF_NAME],
-                        CONF_BASE_URL: base_url,
-                        CONF_API_KEY: api_key,
-                        CONF_FILE_FIELD: user_input.get(
-                            CONF_FILE_FIELD,
-                            entry.data.get(CONF_FILE_FIELD, "file"),
-                        ),
-                    }
-                else:
-                    await validate_builtin_provider(
-                        self.hass, provider, user_input[CONF_MODEL], api_key
+            prompt_error = validate_prompt(
+                self.hass, user_input.get(CONF_PROMPT, DEFAULT_PROMPT)
+            )
+            if prompt_error is None:
+                try:
+                    api_key = user_input.get(CONF_API_KEY) or entry.data.get(
+                        CONF_API_KEY, ""
                     )
-                    new_data = {
-                        CONF_PROVIDER_TYPE: provider.key,
-                        CONF_NAME: user_input[CONF_NAME],
-                        CONF_API_KEY: api_key,
-                    }
-            except vol.Invalid:
-                errors[CONF_URL] = "invalid_url"
-            except CannotConnect:
-                errors["base"] = "connection_error"
-            except InvalidAPIKey:
-                errors[CONF_API_KEY] = "invalid_api_key"
-            except UnauthorizedError:
-                errors["base"] = "unauthorized"
-            except WhisperModelNotFound:
-                errors["base"] = "whisper_not_found"
+                    if provider.custom:
+                        base_url = user_input[CONF_URL].strip().rstrip("/")
+                        cv.url(user_input[CONF_URL])
+                        await validate_custom_provider(self.hass, base_url, api_key)
+                        new_data: dict[str, Any] = {
+                            CONF_PROVIDER_TYPE: provider.key,
+                            CONF_NAME: user_input[CONF_NAME],
+                            CONF_BASE_URL: base_url,
+                            CONF_API_KEY: api_key,
+                            CONF_FILE_FIELD: user_input.get(
+                                CONF_FILE_FIELD,
+                                entry.data.get(CONF_FILE_FIELD, "file"),
+                            ),
+                        }
+                    else:
+                        await validate_builtin_provider(
+                            self.hass, provider, user_input[CONF_MODEL], api_key
+                        )
+                        new_data = {
+                            CONF_PROVIDER_TYPE: provider.key,
+                            CONF_NAME: user_input[CONF_NAME],
+                            CONF_API_KEY: api_key,
+                        }
+                except vol.Invalid:
+                    errors[CONF_URL] = "invalid_url"
+                except CannotConnect:
+                    errors["base"] = "connection_error"
+                except InvalidAPIKey:
+                    errors[CONF_API_KEY] = "invalid_api_key"
+                except UnauthorizedError:
+                    errors["base"] = "unauthorized"
+                except WhisperModelNotFound:
+                    errors["base"] = "whisper_not_found"
+                else:
+                    # The update listener set up in async_setup_entry reloads the
+                    # entry automatically.
+                    self.hass.config_entries.async_update_entry(
+                        entry,
+                        title=user_input[CONF_NAME],
+                        data=new_data,
+                        options={
+                            CONF_MODEL: user_input[CONF_MODEL],
+                            CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
+                            CONF_PROMPT: user_input.get(CONF_PROMPT, DEFAULT_PROMPT),
+                        },
+                    )
+                    return self.async_abort(reason="reconfigure_successful")
             else:
-                # The update listener set up in async_setup_entry reloads the
-                # entry automatically.
-                self.hass.config_entries.async_update_entry(
-                    entry,
-                    title=user_input[CONF_NAME],
-                    data=new_data,
-                    options={
-                        CONF_MODEL: user_input[CONF_MODEL],
-                        CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
-                        CONF_PROMPT: user_input.get(CONF_PROMPT, DEFAULT_PROMPT),
-                    },
-                )
-                return self.async_abort(reason="reconfigure_successful")
+                errors[CONF_PROMPT] = prompt_error
 
         if provider.custom:
             schema = vol.Schema(
                 {
                     vol.Required(
-                        CONF_NAME, default=entry.data.get(CONF_NAME, DEFAULT_CUSTOM_NAME)
+                        CONF_NAME,
+                        default=entry.data.get(CONF_NAME, DEFAULT_CUSTOM_NAME),
                     ): cv.string,
                     vol.Required(CONF_URL): cv.string,
                     vol.Optional(CONF_API_KEY): cv.string,
                     vol.Required(CONF_MODEL): cv.string,
-                    vol.Optional(CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE): TEMPERATURE_SCHEMA,
-                    vol.Optional(CONF_PROMPT, default=DEFAULT_PROMPT): cv.string,
+                    vol.Optional(
+                        CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE
+                    ): TEMPERATURE_SCHEMA,
+                    vol.Optional(CONF_PROMPT, default=DEFAULT_PROMPT): PROMPT_SELECTOR,
                     vol.Optional(CONF_FILE_FIELD): cv.string,
                 }
             )
