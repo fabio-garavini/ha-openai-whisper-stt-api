@@ -31,6 +31,7 @@ class WhisperProvider:
     supports_temperature: bool = True
     supports_prompt: bool = True
     supports_response_format: bool = True
+    supports_streaming: bool = True
     multipart_file_field: str = "file"
     custom: bool = False
 
@@ -139,6 +140,7 @@ PROVIDERS: Final[dict[str, WhisperProvider]] = {
             supports_temperature=False,
             supports_prompt=False,
             supports_response_format=False,
+            supports_streaming=False,
         ),
         WhisperProvider(key="custom", name="Custom", custom=True),
     )

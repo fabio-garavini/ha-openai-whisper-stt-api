@@ -110,7 +110,7 @@ These are the parameters that you can configure:
 
 - `api_key`: (Required) api key
 - `model`: (Required) Check your source API
-- `temperature`: (Optional) Sampling temperature between 0 and 1. Default `0`
+- `temperature`: (Optional) Sampling temperature between 0 and 1. Default `0`. Not offered for providers that do not support it (e.g. Cohere).
 - `prompt`: (Optional) Can be used to **improve speech recognition** of words or even names. Default `""`
   <br>You have to provide a list of words or names separated by a comma `, `
   <br>Example: `"open, close, Chat GPT-3, DALL·E"`.
@@ -130,6 +130,42 @@ These are the parameters that you can configure:
   Plain text, templates, or a mix of both all work. Because templates are evaluated at transcription time (not at startup), newly added or renamed entities are picked up automatically, and entities that are not yet set up when the integration loads can never break the prompt. The template syntax is validated when you save the settings, and a template that fails to render is logged and skipped instead of failing the transcription.
 
   **Note**: transcription APIs limit the prompt size (`whisper-1` accepts about 224 tokens, the `gpt-4o-*` models 1024), so keep the generated list focused on the words you actually speak.
+
+- `streaming_upload`: (Optional) **Stream the audio to the provider while it is still being recorded** instead of uploading it after the recording completes. Default: on. See [Streaming uploads](#streaming-uploads-).
+
+## Streaming uploads ⚡
+
+By default the integration does not wait for the end of your voice command to start talking to the provider: audio is uploaded **while it is captured**, so by the time you stop speaking the upload is (almost) already done. This cuts the whole upload time out of the end-to-end latency, which is most noticeable on slow uplinks and with longer commands.
+
+How it stays reliable:
+
+- The live audio is wrapped in a WAV container with unknown sizes (`0xFFFFFFFF`) — the same thing `ffmpeg` writes when streaming WAV to a pipe, so every ffmpeg-based server (OpenAI, GroqCloud, and virtually all self-hosted ones) understands it.
+- The audio is simultaneously kept in memory, so if the provider rejects a streamed request the integration transparently retries with a classic buffered upload and stops trying to stream for that session.
+- If you prefer the classic behavior, or your server is known not to accept streamed uploads, turn the option off in the integration settings.
+
+Two more runtime behaviors make transcription robust for every provider:
+
+- **Multipart field learning**: if a server answers `422` naming the field it expects the audio in (like whisper-asr-webservice does), the field name is learned and reused, including for streamed requests.
+- **Transient error retry**: rate limits (`429`, honoring `Retry-After`) and transient server errors (`500`, `502`, `503`, `504`) are retried once before giving up.
+
+## Diagnostics 🩺
+
+The integration supports Home Assistant's *Download diagnostics* (menu on the integration entry): it reports the entry configuration with the API key redacted, which is safe to attach to a bug report.
+
+## Entity state 📊
+
+Home Assistant defines the state of an STT entity as the **UTC timestamp of the last transcription** (it is `unknown` until the entity is first used, and it is restored across restarts). Home Assistant's assist pipeline skips the framework's own bookkeeping, so this integration maintains it itself: the state updates the moment a transcription starts.
+
+Because that state format is fixed by Home Assistant (`@final` in the base class), live activity is exposed through the entity attributes instead. In *Developer tools → States* you will find:
+
+| Attribute | Meaning |
+|---|---|
+| `processing` | `true` while a transcription is running |
+| `provider` | Provider name (e.g. `OpenAI`, `Custom`) |
+| `model` | Model name (e.g. `gpt-4o-mini-transcribe`) |
+| `streaming_upload` | Whether uploads are streamed while recording |
+
+This makes it easy to build automations, e.g. trigger on `state` changes (each transcription updates it) or on `processing` turning `true`/`false`.
 
 Now you can set it up through your Home Assistant Dashboard (YAML configuration not supported).
 

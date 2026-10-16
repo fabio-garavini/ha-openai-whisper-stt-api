@@ -11,12 +11,14 @@ CONF_FILE_FIELD: Final = "file_field"
 
 # Options keys
 CONF_PROMPT: Final = "prompt"
+CONF_STREAMING: Final = "streaming_upload"
 CONF_TEMPERATURE: Final = "temperature"
 
 # Defaults
 DEFAULT_NAME: Final = "Whisper Cloud"
 DEFAULT_TEMPERATURE: Final = 0.0
 DEFAULT_PROMPT: Final = ""
+DEFAULT_STREAMING: Final = True
 DEFAULT_CUSTOM_NAME: Final = "Custom Whisper"
 DEFAULT_CUSTOM_MODEL: Final = "whisper-1"
 

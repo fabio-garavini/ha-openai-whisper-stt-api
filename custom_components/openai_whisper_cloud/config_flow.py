@@ -21,6 +21,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
+    BooleanSelector,
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
@@ -36,12 +37,14 @@ from .const import (
     CONF_FILE_FIELD,
     CONF_PROMPT,
     CONF_PROVIDER_TYPE,
+    CONF_STREAMING,
     CONF_TEMPERATURE,
     CONFIG_MINOR_VERSION,
     CONFIG_VERSION,
     DEFAULT_CUSTOM_MODEL,
     DEFAULT_CUSTOM_NAME,
     DEFAULT_PROMPT,
+    DEFAULT_STREAMING,
     DEFAULT_TEMPERATURE,
     DOMAIN,
     REQUEST_TIMEOUT,
@@ -187,22 +190,27 @@ async def validate_custom_provider(
 
 def _builtin_schema(provider: WhisperProvider, api_key_optional: bool) -> vol.Schema:
     """Build the form schema for a builtin provider."""
-    return vol.Schema(
-        {
-            vol.Required(CONF_NAME, default=f"{provider.name} Whisper"): cv.string,
-            vol.Required(CONF_API_KEY)
-            if not api_key_optional
-            else vol.Optional(CONF_API_KEY): cv.string,
-            vol.Required(
-                CONF_MODEL,
-                default=provider.default_model,
-            ): vol.In([model.name for model in provider.models]),
-            vol.Optional(
-                CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE
-            ): TEMPERATURE_SCHEMA,
-            vol.Optional(CONF_PROMPT, default=DEFAULT_PROMPT): PROMPT_SELECTOR,
-        }
-    )
+    schema: dict[Any, Any] = {
+        vol.Required(CONF_NAME, default=f"{provider.name} Whisper"): cv.string,
+        vol.Required(CONF_API_KEY)
+        if not api_key_optional
+        else vol.Optional(CONF_API_KEY): cv.string,
+        vol.Required(
+            CONF_MODEL,
+            default=provider.default_model,
+        ): vol.In([model.name for model in provider.models]),
+    }
+    if provider.supports_temperature:
+        schema[vol.Optional(CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE)] = (
+            TEMPERATURE_SCHEMA
+        )
+    if provider.supports_prompt:
+        schema[vol.Optional(CONF_PROMPT, default=DEFAULT_PROMPT)] = PROMPT_SELECTOR
+    if provider.supports_streaming:
+        schema[vol.Optional(CONF_STREAMING, default=DEFAULT_STREAMING)] = (
+            BooleanSelector()
+        )
+    return vol.Schema(schema)
 
 
 CUSTOM_SCHEMA = vol.Schema(
@@ -213,6 +221,7 @@ CUSTOM_SCHEMA = vol.Schema(
         vol.Required(CONF_MODEL, default=DEFAULT_CUSTOM_MODEL): cv.string,
         vol.Optional(CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE): TEMPERATURE_SCHEMA,
         vol.Optional(CONF_PROMPT, default=DEFAULT_PROMPT): PROMPT_SELECTOR,
+        vol.Optional(CONF_STREAMING, default=DEFAULT_STREAMING): BooleanSelector(),
         vol.Optional(CONF_FILE_FIELD, default="file"): cv.string,
     }
 )
@@ -250,20 +259,31 @@ class OptionsFlowHandler(OptionsFlowWithConfigEntry):
             schema[vol.Required(CONF_MODEL, default=current_model)] = vol.In(
                 model_names
             )
-        schema[
-            vol.Required(
-                CONF_TEMPERATURE,
-                default=self.config_entry.options.get(
-                    CONF_TEMPERATURE, DEFAULT_TEMPERATURE
-                ),
-            )
-        ] = TEMPERATURE_SCHEMA
-        schema[
-            vol.Optional(
-                CONF_PROMPT,
-                default=self.config_entry.options.get(CONF_PROMPT, DEFAULT_PROMPT),
-            )
-        ] = PROMPT_SELECTOR
+        if provider.supports_temperature:
+            schema[
+                vol.Required(
+                    CONF_TEMPERATURE,
+                    default=self.config_entry.options.get(
+                        CONF_TEMPERATURE, DEFAULT_TEMPERATURE
+                    ),
+                )
+            ] = TEMPERATURE_SCHEMA
+        if provider.supports_prompt:
+            schema[
+                vol.Optional(
+                    CONF_PROMPT,
+                    default=self.config_entry.options.get(CONF_PROMPT, DEFAULT_PROMPT),
+                )
+            ] = PROMPT_SELECTOR
+        if provider.supports_streaming:
+            schema[
+                vol.Optional(
+                    CONF_STREAMING,
+                    default=self.config_entry.options.get(
+                        CONF_STREAMING, DEFAULT_STREAMING
+                    ),
+                )
+            ] = BooleanSelector()
 
         return self.async_show_form(
             step_id="init",
@@ -345,8 +365,13 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                         },
                         options={
                             CONF_MODEL: user_input[CONF_MODEL],
-                            CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
+                            CONF_TEMPERATURE: user_input.get(
+                                CONF_TEMPERATURE, DEFAULT_TEMPERATURE
+                            ),
                             CONF_PROMPT: user_input.get(CONF_PROMPT, DEFAULT_PROMPT),
+                            CONF_STREAMING: user_input.get(
+                                CONF_STREAMING, DEFAULT_STREAMING
+                            ),
                         },
                     )
             else:
@@ -393,8 +418,13 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                         },
                         options={
                             CONF_MODEL: user_input[CONF_MODEL],
-                            CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
+                            CONF_TEMPERATURE: user_input.get(
+                                CONF_TEMPERATURE, DEFAULT_TEMPERATURE
+                            ),
                             CONF_PROMPT: user_input.get(CONF_PROMPT, DEFAULT_PROMPT),
+                            CONF_STREAMING: user_input.get(
+                                CONF_STREAMING, DEFAULT_STREAMING
+                            ),
                         },
                     )
             else:
@@ -464,8 +494,13 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                         data=new_data,
                         options={
                             CONF_MODEL: user_input[CONF_MODEL],
-                            CONF_TEMPERATURE: user_input[CONF_TEMPERATURE],
+                            CONF_TEMPERATURE: user_input.get(
+                                CONF_TEMPERATURE, DEFAULT_TEMPERATURE
+                            ),
                             CONF_PROMPT: user_input.get(CONF_PROMPT, DEFAULT_PROMPT),
+                            CONF_STREAMING: user_input.get(
+                                CONF_STREAMING, DEFAULT_STREAMING
+                            ),
                         },
                     )
                     return self.async_abort(reason="reconfigure_successful")
@@ -486,6 +521,9 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_TEMPERATURE, default=DEFAULT_TEMPERATURE
                     ): TEMPERATURE_SCHEMA,
                     vol.Optional(CONF_PROMPT, default=DEFAULT_PROMPT): PROMPT_SELECTOR,
+                    vol.Optional(
+                        CONF_STREAMING, default=DEFAULT_STREAMING
+                    ): BooleanSelector(),
                     vol.Optional(CONF_FILE_FIELD): cv.string,
                 }
             )
@@ -495,6 +533,7 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_MODEL: entry.options.get(CONF_MODEL),
                 CONF_TEMPERATURE: entry.options.get(CONF_TEMPERATURE),
                 CONF_PROMPT: entry.options.get(CONF_PROMPT, DEFAULT_PROMPT),
+                CONF_STREAMING: entry.options.get(CONF_STREAMING, DEFAULT_STREAMING),
                 CONF_FILE_FIELD: entry.data.get(CONF_FILE_FIELD, "file"),
             }
         else:
@@ -504,6 +543,7 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_MODEL: entry.options.get(CONF_MODEL, provider.default_model),
                 CONF_TEMPERATURE: entry.options.get(CONF_TEMPERATURE),
                 CONF_PROMPT: entry.options.get(CONF_PROMPT, DEFAULT_PROMPT),
+                CONF_STREAMING: entry.options.get(CONF_STREAMING, DEFAULT_STREAMING),
             }
 
         return self.async_show_form(

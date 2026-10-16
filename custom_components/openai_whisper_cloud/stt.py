@@ -2,14 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
-import io
-import json
 import logging
 from collections.abc import AsyncIterable
-import wave
-
-import aiohttp
+from typing import Any
 
 from homeassistant.components.stt import (
     AudioBitRates,
@@ -25,22 +20,23 @@ from homeassistant.components.stt import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_KEY, CONF_MODEL, CONF_NAME
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.template import Template, TemplateError, is_template_string
+from homeassistant.util import dt as dt_util
 
+from .client import WhisperTranscriptionClient
 from .const import (
     CONF_BASE_URL,
     CONF_FILE_FIELD,
     CONF_PROMPT,
     CONF_PROVIDER_TYPE,
+    CONF_STREAMING,
     CONF_TEMPERATURE,
     DEFAULT_PROMPT,
+    DEFAULT_STREAMING,
     DEFAULT_TEMPERATURE,
     DOMAIN,
-    MAX_AUDIO_SIZE_BYTES,
-    TRANSCRIPTION_TIMEOUT,
 )
 from .whisper_provider import (
     WhisperModel,
@@ -52,34 +48,6 @@ from .whisper_provider import (
 _LOGGER = logging.getLogger(__name__)
 
 
-def missing_multipart_field(body: str) -> str | None:
-    """Extract the expected multipart field name from a FastAPI 422 error body.
-
-    Servers like whisper-asr-webservice answer with e.g.
-    ``{"detail":[{"loc":["body","audio_file"],"type":"value_error.missing"}]}``
-    when the audio is uploaded under the wrong multipart field name.
-    """
-    try:
-        detail = json.loads(body).get("detail")
-    except (ValueError, AttributeError):
-        return None
-    if not isinstance(detail, list):
-        return None
-    for item in detail:
-        if not isinstance(item, dict):
-            continue
-        loc = item.get("loc")
-        if not (isinstance(loc, list) and len(loc) >= 2 and loc[0] == "body"):
-            continue
-        error_type = str(item.get("type", ""))
-        message = str(item.get("msg", "")).lower()
-        if error_type.endswith("missing") or "required" in message:
-            name = loc[-1]
-            if isinstance(name, str) and name and name != "body":
-                return name
-    return None
-
-
 def resolve_language(language: str | None, supported: list[str]) -> str | None:
     """Map a requested language onto one supported by the model.
 
@@ -87,6 +55,10 @@ def resolve_language(language: str | None, supported: list[str]) -> str | None:
     (``pt``) when the base language is supported. This is needed because
     Whisper-style APIs only accept base language codes, while Home Assistant
     may request regional variants for its intent system.
+
+    A language the model does not support at all maps to ``None`` so the
+    provider auto-detects the spoken language instead of failing the
+    request with an unsupported language code.
     """
     if not language:
         return None
@@ -96,7 +68,7 @@ def resolve_language(language: str | None, supported: list[str]) -> str | None:
     base = lang.split("-")[0]
     if base in supported:
         return base
-    return lang
+    return None
 
 
 @callback
@@ -127,17 +99,6 @@ def resolve_prompt(hass: HomeAssistant, prompt: str) -> str:
     return rendered
 
 
-def encode_wav(data: bytes, channels: int, sample_rate: int) -> bytes:
-    """Wrap raw PCM samples into a WAV container."""
-    buffer = io.BytesIO()
-    with wave.open(buffer, "wb") as wav_file:
-        wav_file.setnchannels(channels)
-        wav_file.setsampwidth(2)
-        wav_file.setframerate(sample_rate)
-        wav_file.writeframes(data)
-    return buffer.getvalue()
-
-
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
@@ -166,6 +127,9 @@ async def async_setup_entry(
                 ),
                 prompt=config_entry.options.get(CONF_PROMPT, DEFAULT_PROMPT),
                 model_name=config_entry.options.get(CONF_MODEL),
+                streaming=bool(
+                    config_entry.options.get(CONF_STREAMING, DEFAULT_STREAMING)
+                ),
                 name=config_entry.data[CONF_NAME],
                 unique_id=config_entry.entry_id,
             )
@@ -179,10 +143,12 @@ class OpenAIWhisperEntity(SpeechToTextEntity):
     def __init__(
         self,
         provider: WhisperProvider,
+        *,
         api_key: str,
         temperature: float,
         prompt: str,
         model_name: str | None,
+        streaming: bool,
         name: str,
         unique_id: str,
     ) -> None:
@@ -191,6 +157,7 @@ class OpenAIWhisperEntity(SpeechToTextEntity):
         self.api_key = api_key
         self.temperature = temperature
         self.prompt = prompt
+        self.streaming = streaming
         self.model: WhisperModel = provider.get_model(model_name)
         self._attr_name = name
         self._attr_unique_id = unique_id
@@ -200,6 +167,8 @@ class OpenAIWhisperEntity(SpeechToTextEntity):
             manufacturer=provider.name,
             model=self.model.name,
         )
+        self._client: WhisperTranscriptionClient | None = None
+        self._active = 0
 
     @property
     def supported_languages(self) -> list[str]:
@@ -241,117 +210,65 @@ class OpenAIWhisperEntity(SpeechToTextEntity):
         """Return a list of supported channels."""
         return [AudioChannels.CHANNEL_MONO, AudioChannels.CHANNEL_STEREO]
 
-    def _build_form(
-        self, wav_data: bytes, language: str | None, file_field: str, prompt: str
-    ) -> aiohttp.FormData:
-        """Build the multipart form for a transcription request."""
-        form = aiohttp.FormData()
-        form.add_field(
-            file_field, wav_data, filename="audio.wav", content_type="audio/wav"
-        )
-        form.add_field("model", self.model.name)
-        if language:
-            form.add_field("language", language)
-        if self.provider.supports_temperature:
-            form.add_field("temperature", str(self.temperature))
-        if self.provider.supports_prompt and prompt:
-            form.add_field("prompt", prompt)
-        if self.provider.supports_response_format:
-            form.add_field("response_format", "json")
-        return form
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return activity and configuration details."""
+        return {
+            "processing": self._active > 0,
+            "provider": self.provider.name,
+            "model": self.model.name,
+            "streaming_upload": self.streaming,
+        }
+
+    def _get_client(self) -> WhisperTranscriptionClient:
+        """Return the transcription client, creating it on first use."""
+        if self._client is None:
+            self._client = WhisperTranscriptionClient(
+                self.hass,
+                self.provider,
+                api_key=self.api_key,
+                model_name=self.model.name,
+                temperature=self.temperature,
+                streaming=self.streaming,
+            )
+        return self._client
+
+    @callback
+    def _async_write_activity_state(self) -> None:
+        """Write the state once the entity has been added to hass."""
+        if self.entity_id:
+            self.async_write_ha_state()
 
     async def async_process_audio_stream(
         self, metadata: SpeechMetadata, stream: AsyncIterable[bytes]
     ) -> SpeechResult:
-        """Process an audio stream to text."""
+        """Process an audio stream to text.
+
+        The framework defines the STT entity state as the time the last
+        transcription started, but only its internal wrapper (used by the
+        HTTP API) maintains it: the assist pipeline calls this public
+        method directly. Do the same bookkeeping here so the state is
+        maintained whichever entry point is used, and mirror live activity
+        in the ``processing`` attribute.
+        """
+        self._SpeechToTextEntity__last_processed = dt_util.utcnow().isoformat()
+        self._active += 1
+        self._async_write_activity_state()
         _LOGGER.debug("Processing audio stream: %s", metadata)
-
-        chunks: list[bytes] = []
-        size = 0
-        async for chunk in stream:
-            chunks.append(chunk)
-            size += len(chunk)
-            if size > MAX_AUDIO_SIZE_BYTES:
-                _LOGGER.error(
-                    "Audio stream exceeds the maximum allowed size of %.1f MB",
-                    MAX_AUDIO_SIZE_BYTES / (1024 * 1024),
-                )
-                return SpeechResult("", SpeechResultState.ERROR)
-
-        if size == 0:
-            _LOGGER.error("No audio data received")
-            return SpeechResult("", SpeechResultState.ERROR)
-
-        wav_data = await self.hass.async_add_executor_job(
-            encode_wav,
-            b"".join(chunks),
-            int(metadata.channel),
-            int(metadata.sample_rate),
-        )
-        _LOGGER.debug("Encoded %.2f MB of audio to WAV", len(wav_data) / (1024 * 1024))
-
-        language = resolve_language(metadata.language, self.model.languages)
-        prompt = resolve_prompt(self.hass, self.prompt)
-
-        headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
-        session = async_get_clientsession(self.hass)
-
-        file_field = self.provider.multipart_file_field
         try:
-            response = await session.post(
-                self.provider.transcription_url,
-                data=self._build_form(wav_data, language, file_field, prompt),
-                headers=headers,
-                timeout=aiohttp.ClientTimeout(total=TRANSCRIPTION_TIMEOUT),
+            language = resolve_language(metadata.language, self.model.languages)
+            prompt = resolve_prompt(self.hass, self.prompt)
+            text = await self._get_client().transcribe(
+                language=language,
+                prompt=prompt,
+                channels=int(metadata.channel),
+                sample_rate=int(metadata.sample_rate),
+                stream=stream,
             )
-            if response.status == 422:
-                body = await response.text()
-                missing = missing_multipart_field(body)
-                if missing and missing != file_field:
-                    _LOGGER.info(
-                        "Provider expects the audio in multipart field '%s' instead of '%s', retrying",
-                        missing,
-                        file_field,
-                    )
-                    file_field = missing
-                    response = await session.post(
-                        self.provider.transcription_url,
-                        data=self._build_form(wav_data, language, file_field, prompt),
-                        headers=headers,
-                        timeout=aiohttp.ClientTimeout(total=TRANSCRIPTION_TIMEOUT),
-                    )
-
-            if response.status != 200:
-                body = await response.text()
-                _LOGGER.error(
-                    "Transcription request failed with status %d: %s",
-                    response.status,
-                    body[:500],
-                )
-                return SpeechResult("", SpeechResultState.ERROR)
-
-            body_text = await response.text()
-            try:
-                result = json.loads(body_text)
-            except ValueError:
-                # Plain text response (e.g. whisper-asr-webservice /asr)
-                result = body_text
-            if isinstance(result, dict):
-                transcription = result.get("text", "")
-            else:
-                transcription = str(result).strip()
-        except (
-            TimeoutError,
-            asyncio.TimeoutError,
-            aiohttp.ClientError,
-            ValueError,
-        ) as err:
-            _LOGGER.error("Error during transcription: %s", err)
+        finally:
+            self._active -= 1
+            self._async_write_activity_state()
+        if text is None:
             return SpeechResult("", SpeechResultState.ERROR)
-
-        if not transcription:
-            _LOGGER.error("Provider returned an empty transcription")
-            return SpeechResult("", SpeechResultState.ERROR)
-
-        _LOGGER.debug("Transcription: %s", transcription)
-        return SpeechResult(transcription, SpeechResultState.SUCCESS)
+        _LOGGER.debug("Transcription: %s", text)
+        return SpeechResult(text, SpeechResultState.SUCCESS)

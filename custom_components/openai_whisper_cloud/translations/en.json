@@ -15,11 +15,13 @@
                     "api_key": "API key",
                     "model": "Model",
                     "temperature": "Temperature",
-                    "prompt": "Prompt (Optional)"
+                    "prompt": "Prompt (Optional)",
+                    "streaming_upload": "Stream audio while it is recorded (lower latency)"
                 },
                 "data_description": {
                     "api_key": "API key for the selected provider.",
-                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`.\nIt can also contain Home Assistant templates that are rendered before each transcription, so the list can stay in sync with your home automatically, e.g. `{{ states('sensor.room_names') }}, {{ states('sensor.entity_names') }}`."
+                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`.\nIt can also contain Home Assistant templates that are rendered before each transcription, so the list can stay in sync with your home automatically, e.g. `{{ states('sensor.room_names') }}, {{ states('sensor.entity_names') }}`.",
+                    "streaming_upload": "Upload the audio to the provider while it is still being recorded instead of after the recording completes. If the provider does not accept streamed uploads, the integration automatically falls back to a buffered upload and remembers not to try again."
                 }
             },
             "custom": {
@@ -31,14 +33,16 @@
                     "model": "Model",
                     "temperature": "Temperature",
                     "prompt": "Prompt (Optional)",
-                    "file_field": "Audio file field name"
+                    "file_field": "Audio file field name",
+                    "streaming_upload": "Stream audio while it is recorded (lower latency)"
                 },
                 "data_description": {
                     "url": "Your server URL. A URL without a path gets the standard endpoint appended (`https://host` and `https://host/v1` both become `https://host/v1/audio/transcriptions`); any URL that already includes a path is used as-is, e.g. `http://host:8000/asr` (whisper-asr-webservice).",
                     "api_key": "Leave empty if your server does not require an API key.",
                     "model": "Model name accepted by your server (e.g. `whisper-1`, `Systran/faster-whisper-large-v3`).",
                     "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`.\nIt can also contain Home Assistant templates that are rendered before each transcription, so the list can stay in sync with your home automatically, e.g. `{{ states('sensor.room_names') }}, {{ states('sensor.entity_names') }}`.",
-                    "file_field": "Multipart field used to upload the audio. Most OpenAI-compatible servers use `file`; whisper-asr-webservice needs `audio_file`. If unsure, keep `file`: the integration detects and retries automatically on a 422 response."
+                    "file_field": "Multipart field used to upload the audio. Most OpenAI-compatible servers use `file`; whisper-asr-webservice needs `audio_file`. If unsure, keep `file`: the integration detects and retries automatically on a 422 response.",
+                    "streaming_upload": "Upload the audio to the provider while it is still being recorded instead of after the recording completes. If the provider does not accept streamed uploads, the integration automatically falls back to a buffered upload and remembers not to try again."
                 }
             },
             "reconfigure": {
@@ -50,13 +54,15 @@
                     "model": "Model",
                     "temperature": "Temperature",
                     "prompt": "Prompt (Optional)",
-                    "file_field": "Audio file field name"
+                    "file_field": "Audio file field name",
+                    "streaming_upload": "Stream audio while it is recorded (lower latency)"
                 },
                 "data_description": {
                     "url": "Your server URL. A URL without a path gets the standard endpoint appended (`https://host` and `https://host/v1` both become `https://host/v1/audio/transcriptions`); any URL that already includes a path is used as-is, e.g. `http://host:8000/asr` (whisper-asr-webservice).",
                     "api_key": "Leave blank to keep the current API key.",
                     "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`.\nIt can also contain Home Assistant templates that are rendered before each transcription, so the list can stay in sync with your home automatically, e.g. `{{ states('sensor.room_names') }}, {{ states('sensor.entity_names') }}`.",
-                    "file_field": "Multipart field used to upload the audio. Most OpenAI-compatible servers use `file`; whisper-asr-webservice needs `audio_file`. If unsure, keep `file`: the integration detects and retries automatically on a 422 response."
+                    "file_field": "Multipart field used to upload the audio. Most OpenAI-compatible servers use `file`; whisper-asr-webservice needs `audio_file`. If unsure, keep `file`: the integration detects and retries automatically on a 422 response.",
+                    "streaming_upload": "Upload the audio to the provider while it is still being recorded instead of after the recording completes. If the provider does not accept streamed uploads, the integration automatically falls back to a buffered upload and remembers not to try again."
                 }
             }
         },
@@ -80,10 +86,12 @@
                 "data": {
                     "model": "Model",
                     "temperature": "Temperature",
-                    "prompt": "Prompt (Optional)"
+                    "prompt": "Prompt (Optional)",
+                    "streaming_upload": "Stream audio while it is recorded (lower latency)"
                 },
                 "data_description": {
-                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`.\nIt can also contain Home Assistant templates that are rendered before each transcription, so the list can stay in sync with your home automatically, e.g. `{{ states('sensor.room_names') }}, {{ states('sensor.entity_names') }}`."
+                    "prompt": "Prompt can be used to improve speech recognition of words or even names.\nYou have to provide a list of words or names separated by a comma \", \".\nExample: `open, close, Chat GPT-3, DALL·E`.\nIt can also contain Home Assistant templates that are rendered before each transcription, so the list can stay in sync with your home automatically, e.g. `{{ states('sensor.room_names') }}, {{ states('sensor.entity_names') }}`.",
+                    "streaming_upload": "Upload the audio to the provider while it is still being recorded instead of after the recording completes. If the provider does not accept streamed uploads, the integration automatically falls back to a buffered upload and remembers not to try again."
                 }
             }
         }
