@@ -77,20 +77,24 @@ TEMPERATURE_SCHEMA = vol.All(vol.Coerce(float), vol.Range(min=0, max=1))
 
 
 @callback
-def validate_prompt(hass: HomeAssistant, prompt: str) -> str | None:
-    """Check the prompt; return a form error key or None if it is valid.
+def validate_prompt(hass: HomeAssistant, prompt: str) -> tuple[str, str] | None:
+    """Check the prompt; return (form error key, error detail) or None.
 
     A prompt without template syntax is always valid. A prompt that
     contains templates must at least be syntactically correct; rendering
     happens at transcription time, so referenced entities do not need to
     exist yet when the settings are saved.
+
+    The detail (the template engine error) is exposed to the form through
+    the ``{error_detail}`` placeholder, so the user sees what is actually
+    wrong instead of a generic message.
     """
     if not prompt or not is_template_string(prompt):
         return None
     try:
         Template(prompt, hass).ensure_valid()
-    except TemplateError:
-        return "invalid_prompt_template"
+    except TemplateError as err:
+        return "invalid_prompt_template", str(err)
     return None
 
 
@@ -252,13 +256,14 @@ class OptionsFlowHandler(OptionsFlowWithConfigEntry):
     ) -> ConfigFlowResult:
         """Manage the provider options."""
         errors: dict[str, str] = {}
+        description_placeholders: dict[str, str] = {}
         if user_input is not None:
             prompt_error = validate_prompt(
                 self.hass, user_input.get(CONF_PROMPT, DEFAULT_PROMPT)
             )
             if prompt_error is None:
                 return self.async_create_entry(title="", data=user_input)
-            errors[CONF_PROMPT] = prompt_error
+            errors[CONF_PROMPT], description_placeholders["error_detail"] = prompt_error
 
         provider = get_provider(self.config_entry.data[CONF_PROVIDER_TYPE])
         current_model = self.config_entry.options.get(
@@ -306,6 +311,7 @@ class OptionsFlowHandler(OptionsFlowWithConfigEntry):
                 vol.Schema(schema), user_input or {}
             ),
             errors=errors,
+            description_placeholders=description_placeholders or None,
         )
 
 
@@ -349,6 +355,7 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
         assert self._provider is not None
         provider = self._provider
         errors: dict[str, str] = {}
+        description_placeholders: dict[str, str] = {}
 
         if user_input is not None:
             prompt_error = validate_prompt(
@@ -390,12 +397,15 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                         },
                     )
             else:
-                errors[CONF_PROMPT] = prompt_error
+                errors[CONF_PROMPT], description_placeholders["error_detail"] = (
+                    prompt_error
+                )
 
         return self.async_show_form(
             step_id="whisper",
             data_schema=_builtin_schema(provider, False),
             errors=errors,
+            description_placeholders=description_placeholders or None,
         )
 
     async def async_step_custom(
@@ -403,6 +413,7 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle setup of a custom OpenAI-compatible endpoint."""
         errors: dict[str, str] = {}
+        description_placeholders: dict[str, str] = {}
 
         if user_input is not None:
             base_url = user_input[CONF_URL].strip().rstrip("/")
@@ -443,10 +454,15 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                         },
                     )
             else:
-                errors[CONF_PROMPT] = prompt_error
+                errors[CONF_PROMPT], description_placeholders["error_detail"] = (
+                    prompt_error
+                )
 
         return self.async_show_form(
-            step_id="custom", data_schema=CUSTOM_SCHEMA, errors=errors
+            step_id="custom",
+            data_schema=CUSTOM_SCHEMA,
+            errors=errors,
+            description_placeholders=description_placeholders or None,
         )
 
     async def async_step_reconfigure(
@@ -454,6 +470,7 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle reconfiguration of an existing entry."""
         errors: dict[str, str] = {}
+        description_placeholders: dict[str, str] = {}
         entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
         assert entry is not None
         provider = get_provider(entry.data[CONF_PROVIDER_TYPE])
@@ -520,7 +537,9 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                     )
                     return self.async_abort(reason="reconfigure_successful")
             else:
-                errors[CONF_PROMPT] = prompt_error
+                errors[CONF_PROMPT], description_placeholders["error_detail"] = (
+                    prompt_error
+                )
 
         if provider.custom:
             schema = vol.Schema(
@@ -567,4 +586,5 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                 data_schema=schema, suggested_values=suggested
             ),
             errors=errors,
+            description_placeholders=description_placeholders or None,
         )

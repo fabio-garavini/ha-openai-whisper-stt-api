@@ -75,7 +75,7 @@
             "whisper_not_found": "Whisper modelis nav atrasts",
             "connection_error": "Nevar izveidot savienojumu ar piegādātāju, pārbaudiet URL un tīklu",
             "invalid_url": "Nederīgs URL",
-            "invalid_prompt_template": "Uzvedne satur nederīgu veidni",
+            "invalid_prompt_template": "Uzvedne satur nederīgu veidni: {error_detail}",
             "unknown": "Negaidīta kļūda"
         }
     },
@@ -94,6 +94,9 @@
                     "streaming_upload": "Augšupielādē audio piegādātājam, kamēr tas vēl tiek ierakstīts, nevis pēc ierakstīšanas pabeigšanas. Ja piegādātājs nepieņem straumētas augšupielādes, integrācija automātiski pāriet uz buferizētu augšupielādi un atceras to turpmāk nemēģināt."
                 }
             }
+        },
+        "error": {
+            "invalid_prompt_template": "Uzvedne satur nederīgu veidni: {error_detail}"
         }
     }
 }

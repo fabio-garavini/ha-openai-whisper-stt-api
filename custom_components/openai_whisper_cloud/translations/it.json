@@ -75,7 +75,7 @@
             "whisper_not_found": "Modello Whisper non trovato",
             "connection_error": "Impossibile connettersi al provider, controlla l'URL e la tua rete",
             "invalid_url": "URL non valido",
-            "invalid_prompt_template": "Il prompt contiene un template non valido",
+            "invalid_prompt_template": "Il prompt contiene un template non valido: {error_detail}",
             "unknown": "Errore imprevisto"
         }
     },
@@ -94,6 +94,9 @@
                     "streaming_upload": "Carica l'audio sul provider mentre viene ancora registrato, invece che al termine della registrazione. Se il provider non accetta upload in streaming, l'integrazione torna automaticamente a un upload bufferizzato e ricorda di non riprovare."
                 }
             }
+        },
+        "error": {
+            "invalid_prompt_template": "Il prompt contiene un template non valido: {error_detail}"
         }
     }
 }

@@ -75,7 +75,7 @@
             "whisper_not_found": "Whisper model not found",
             "connection_error": "Cannot connect to the provider, check the URL and your network",
             "invalid_url": "Invalid URL",
-            "invalid_prompt_template": "The prompt contains an invalid template",
+            "invalid_prompt_template": "The prompt contains an invalid template: {error_detail}",
             "unknown": "Unexpected error"
         }
     },
@@ -94,6 +94,9 @@
                     "streaming_upload": "Upload the audio to the provider while it is still being recorded instead of after the recording completes. If the provider does not accept streamed uploads, the integration automatically falls back to a buffered upload and remembers not to try again."
                 }
             }
+        },
+        "error": {
+            "invalid_prompt_template": "The prompt contains an invalid template: {error_detail}"
         }
     }
 }
