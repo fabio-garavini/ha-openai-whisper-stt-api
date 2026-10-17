@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from typing import Any
 
@@ -149,7 +150,7 @@ async def validate_builtin_provider(
 
     if provider.list_models_only:
         try:
-            models = (await response.json()).get("data", [])
+            models = json.loads(await response.text(errors="replace")).get("data", [])
             model_ids = [model.get("id") for model in models if isinstance(model, dict)]
         except (ValueError, AttributeError, TypeError):
             # Unexpected payload shape: accept the endpoint and let a

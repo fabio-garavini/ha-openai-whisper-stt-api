@@ -1,0 +1,4 @@
+# Test requirements
+# pytest-homeassistant-custom-component pins the matching Home Assistant version.
+pytest-homeassistant-custom-component==0.13.372
+pytest-cov>=7.0

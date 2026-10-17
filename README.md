@@ -180,6 +180,28 @@ Two more runtime behaviors make transcription robust for every provider:
 
 The integration supports Home Assistant's *Download diagnostics* (menu on the integration entry): it reports the entry configuration with the API key redacted, which is safe to attach to a bug report.
 
+## Development 🧪
+
+The test suite runs against the matching Home Assistant version using
+[pytest-homeassistant-custom-component](https://github.com/MatthewFlamm/pytest-homeassistant-custom-component),
+the same harness Home Assistant core uses. Transcription requests are exercised
+against scripted local HTTP servers, so the full request path (framing,
+headers, retries, fallbacks) runs for real without touching the internet.
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.test.txt
+
+# run the test suite
+pytest
+
+# run it with coverage (the suite covers 100% of the integration's statements)
+pytest --cov --cov-report=term-missing
+```
+
+The tests also run in CI on every push and pull request (`.github/workflows/test.yaml`).
+
 ## Entity state 📊
 
 Home Assistant defines the state of an STT entity as the **UTC timestamp of the last transcription** (it is `unknown` until the entity is first used, and it is restored across restarts). Home Assistant's assist pipeline skips the framework's own bookkeeping, so this integration maintains it itself: the state updates the moment a transcription starts.

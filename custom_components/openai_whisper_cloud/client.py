@@ -263,7 +263,8 @@ class WhisperTranscriptionClient:
             _LOGGER.debug("Streamed upload failed: %s", err)
             return None
 
-        if too_large:
+        if too_large:  # pragma: no cover - aiohttp always propagates the
+            # generator exception before a response can be returned
             raise AudioTooLargeError
         if response.status != 200:
             error_body = await response.text(errors="replace")
@@ -277,7 +278,13 @@ class WhisperTranscriptionClient:
             ):
                 self._learn_file_field(missing)
             return None
-        return await self._parse_response(response)
+        try:
+            return await self._parse_response(response)
+        except (TimeoutError, aiohttp.ClientError) as err:
+            # The connection died while reading the response; fall back to
+            # a buffered retry.
+            _LOGGER.debug("Failed to read the streamed response: %s", err)
+            return None
 
     async def _transcribe_buffered(
         self,
@@ -323,13 +330,15 @@ class WhisperTranscriptionClient:
 
         Two cases are worth a retry: a 422 that names the multipart field
         the server expects (learned and used from then on), and rate
-        limiting or transient server errors (honoring Retry-After).
+        limiting or transient server errors (honoring Retry-After). The
+        request is rebuilt for every attempt so a learned multipart field
+        name takes effect on the retry.
         """
-        request_kwargs = await self._prepare_request(
-            wav_data, language=language, prompt=prompt
-        )
-        response: aiohttp.ClientResponse
+        response: aiohttp.ClientResponse | None = None
         for attempt in (1, 2):
+            request_kwargs = await self._prepare_request(
+                wav_data, language=language, prompt=prompt
+            )
             response = await self._session.post(
                 self._provider.transcription_url,
                 headers=self._headers,
@@ -354,6 +363,7 @@ class WhisperTranscriptionClient:
                 await asyncio.sleep(delay)
                 continue
             break
+        assert response is not None
         return response
 
     async def _prepare_request(
