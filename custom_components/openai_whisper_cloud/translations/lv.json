@@ -20,7 +20,7 @@
                 },
                 "data_description": {
                     "api_key": "Atlasītā piegādātāja API atslēga.",
-                    "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`.\nUzvednē var izmantot arī Home Assistant veidnes, kas tiek aprēķinātas pirms katras transkripcijas, tāpēc saraksts vienmēr ir aktuāls, piem., `{{ states('sensor.room_names') }}, {{ states('sensor.entity_names') }}`.",
+                    "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`.\nUzvednē var izmantot arī Home Assistant veidnes, kas tiek aprēķinātas pirms katras transkripcijas, tāpēc saraksts vienmēr ir aktuāls, piem., `'{{ states(''sensor.room_names'') }}, {{ states(''sensor.entity_names'') }}'`.",
                     "streaming_upload": "Augšupielādē audio piegādātājam, kamēr tas vēl tiek ierakstīts, nevis pēc ierakstīšanas pabeigšanas. Ja piegādātājs nepieņem straumētas augšupielādes, integrācija automātiski pāriet uz buferizētu augšupielādi un atceras to turpmāk nemēģināt."
                 }
             },
@@ -40,7 +40,7 @@
                     "url": "Jūsu servera URL. URL bez ceļa automātiski saņem standarta galapunktu (`https://host` un `https://host/v1` kļūst par `https://host/v1/audio/transcriptions`); jebkurš URL, kas jau satur ceļu, tiek lietots tāds, kāds tas ir, piem., `http://host:8000/asr` (whisper-asr-webservice).",
                     "api_key": "Atstājiet tukšu, ja jūsu serveris neprasa API atslēgu.",
                     "model": "Modeļa nosaukums, ko atbalsta jūsu serveris (piem., `whisper-1`, `Systran/faster-whisper-large-v3`).",
-                    "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`.\nUzvednē var izmantot arī Home Assistant veidnes, kas tiek aprēķinātas pirms katras transkripcijas, tāpēc saraksts vienmēr ir aktuāls, piem., `{{ states('sensor.room_names') }}, {{ states('sensor.entity_names') }}`.",
+                    "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`.\nUzvednē var izmantot arī Home Assistant veidnes, kas tiek aprēķinātas pirms katras transkripcijas, tāpēc saraksts vienmēr ir aktuāls, piem., `'{{ states(''sensor.room_names'') }}, {{ states(''sensor.entity_names'') }}'`.",
                     "file_field": "Multipart lauks, ko izmanto audio augšupielādei. Lielākā daļa OpenAI saderīgu serveru izmanto `file`; whisper-asr-webservice pieprasa `audio_file`. Ja neesat pārliecināts, atstājiet `file`: integrācija automātiski atklāj un mēģina vēlreiz pēc 422 atbildes.",
                     "streaming_upload": "Augšupielādē audio piegādātājam, kamēr tas vēl tiek ierakstīts, nevis pēc ierakstīšanas pabeigšanas. Ja piegādātājs nepieņem straumētas augšupielādes, integrācija automātiski pāriet uz buferizētu augšupielādi un atceras to turpmāk nemēģināt."
                 }
@@ -60,7 +60,7 @@
                 "data_description": {
                     "url": "Jūsu servera URL. URL bez ceļa automātiski saņem standarta galapunktu (`https://host` un `https://host/v1` kļūst par `https://host/v1/audio/transcriptions`); jebkurš URL, kas jau satur ceļu, tiek lietots tāds, kāds tas ir, piem., `http://host:8000/asr` (whisper-asr-webservice).",
                     "api_key": "Atstājiet tukšu, lai paturētu esošo API atslēgu.",
-                    "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`.\nUzvednē var izmantot arī Home Assistant veidnes, kas tiek aprēķinātas pirms katras transkripcijas, tāpēc saraksts vienmēr ir aktuāls, piem., `{{ states('sensor.room_names') }}, {{ states('sensor.entity_names') }}`.",
+                    "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`.\nUzvednē var izmantot arī Home Assistant veidnes, kas tiek aprēķinātas pirms katras transkripcijas, tāpēc saraksts vienmēr ir aktuāls, piem., `'{{ states(''sensor.room_names'') }}, {{ states(''sensor.entity_names'') }}'`.",
                     "file_field": "Multipart lauks, ko izmanto audio augšupielādei. Lielākā daļa OpenAI saderīgu serveru izmanto `file`; whisper-asr-webservice pieprasa `audio_file`. Ja neesat pārliecināts, atstājiet `file`: integrācija automātiski atklāj un mēģina vēlreiz pēc 422 atbildes.",
                     "streaming_upload": "Augšupielādē audio piegādātājam, kamēr tas vēl tiek ierakstīts, nevis pēc ierakstīšanas pabeigšanas. Ja piegādātājs nepieņem straumētas augšupielādes, integrācija automātiski pāriet uz buferizētu augšupielādi un atceras to turpmāk nemēģināt."
                 }
@@ -90,7 +90,7 @@
                     "streaming_upload": "Augšupielādē audio ierakstīšanas laikā (mazāka aizkave)"
                 },
                 "data_description": {
-                    "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`.\nUzvednē var izmantot arī Home Assistant veidnes, kas tiek aprēķinātas pirms katras transkripcijas, tāpēc saraksts vienmēr ir aktuāls, piem., `{{ states('sensor.room_names') }}, {{ states('sensor.entity_names') }}`.",
+                    "prompt": "Uzvednes var uzlabot runas atpazīšanu netipiskiem vārdiem.\nVarat norādīt ar komatu \", \" atdalītu vārdu sarakstu.\nPiemēram: `open, close, Chat GPT-3, DALL·E`.\nUzvednē var izmantot arī Home Assistant veidnes, kas tiek aprēķinātas pirms katras transkripcijas, tāpēc saraksts vienmēr ir aktuāls, piem., `'{{ states(''sensor.room_names'') }}, {{ states(''sensor.entity_names'') }}'`.",
                     "streaming_upload": "Augšupielādē audio piegādātājam, kamēr tas vēl tiek ierakstīts, nevis pēc ierakstīšanas pabeigšanas. Ja piegādātājs nepieņem straumētas augšupielādes, integrācija automātiski pāriet uz buferizētu augšupielādi un atceras to turpmāk nemēģināt."
                 }
             }
