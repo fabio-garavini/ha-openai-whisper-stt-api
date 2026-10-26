@@ -56,7 +56,6 @@ def get_field(result: dict[str, Any], name: str) -> tuple[Any, Any]:
 pytestmark = pytest.mark.usefixtures("socket_enabled")
 
 
-
 # ---------------------------------------------------------------------------
 # prompt validation helper
 # ---------------------------------------------------------------------------
@@ -448,6 +447,8 @@ async def test_whisper_step_invalid_prompt_no_provider_call(hass: Any) -> None:
     assert result["type"] == FlowResultType.FORM
     assert result["errors"] == {CONF_PROMPT: "invalid_prompt_template"}
     assert "TemplateSyntaxError" in result["description_placeholders"]["error_detail"]
+    marker, _ = get_field(result, CONF_PROMPT)
+    assert marker.description["suggested_value"] == "{{ broken"
     mock_validate.assert_not_awaited()
 
 
@@ -543,6 +544,8 @@ async def test_custom_step_invalid_prompt(hass: Any) -> None:
         )
     assert result["errors"] == {CONF_PROMPT: "invalid_prompt_template"}
     assert "error_detail" in result["description_placeholders"]
+    marker, _ = get_field(result, CONF_PROMPT)
+    assert marker.description["suggested_value"] == "{% bad"
     mock_validate.assert_not_awaited()
 
 

@@ -7,7 +7,12 @@ from typing import Any
 
 import pytest
 
+from homeassistant.components.homeassistant.exposed_entities import (
+    async_expose_entity,
+)
 from homeassistant.const import CONF_API_KEY, CONF_MODEL, CONF_NAME
+from homeassistant.helpers import entity_registry as er
+from homeassistant.setup import async_setup_component
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -20,7 +25,10 @@ from custom_components.openai_whisper_cloud.const import (
     DOMAIN,
 )
 from custom_components.openai_whisper_cloud.stt import (
+    ASSIST_ENTITIES,
+    ASSIST_ENTITY_NAMES,
     OpenAIWhisperEntity,
+    assist_prompt_variables,
     resolve_language,
     resolve_prompt,
 )
@@ -131,6 +139,58 @@ async def test_resolve_prompt_broken_template(
     assert "failed to render" in caplog.text
 
 
+async def setup_assist_exposure(hass: Any) -> tuple[str, str]:
+    """Expose one light with an alias and hide one sensor from Assist."""
+    assert await async_setup_component(hass, "homeassistant", {})
+    registry = er.async_get(hass)
+
+    light = registry.async_get_or_create("light", "test", "living-room")
+    registry.async_update_entity(light.entity_id, aliases=["Lounge Lamp"])
+    hass.states.async_set(light.entity_id, "on", {"friendly_name": "Living Room Light"})
+    async_expose_entity(hass, "conversation", light.entity_id, True)
+
+    sensor = registry.async_get_or_create("sensor", "test", "secret")
+    hass.states.async_set(sensor.entity_id, "42", {"friendly_name": "Secret Sensor"})
+    async_expose_entity(hass, "conversation", sensor.entity_id, False)
+    return light.entity_id, sensor.entity_id
+
+
+async def test_assist_prompt_variables(hass: Any) -> None:
+    """Exposed entity names and registry aliases are collected for Assist."""
+    light_entity_id, _ = await setup_assist_exposure(hass)
+
+    variables = assist_prompt_variables(hass)
+
+    assert variables[ASSIST_ENTITY_NAMES] == "Living Room Light, Lounge Lamp"
+    assert variables[ASSIST_ENTITIES] == [
+        {
+            "entity_id": light_entity_id,
+            "domain": "light",
+            "names": ["Living Room Light", "Lounge Lamp"],
+        }
+    ]
+
+
+async def test_resolve_prompt_assist_variables(hass: Any) -> None:
+    """The Assist helpers are available inside prompt templates."""
+    await setup_assist_exposure(hass)
+
+    assert (
+        resolve_prompt(hass, "{{ assist_entity_names }}")
+        == "Living Room Light, Lounge Lamp"
+    )
+    assert (
+        resolve_prompt(
+            hass,
+            "{% for entity in assist_entities %}"
+            "{{ entity.names | join(' / ') }}"
+            "{% if not loop.last %} | {% endif %}"
+            "{% endfor %}",
+        )
+        == "Living Room Light / Lounge Lamp"
+    )
+
+
 # ---------------------------------------------------------------------------
 # entity
 # ---------------------------------------------------------------------------
@@ -233,6 +293,23 @@ async def test_entity_transcribes(
     assert result.text == TEST_TRANSCRIPTION
     # the prompt template was rendered and sent with the request
     assert server.requests[0]["fields"]["prompt"] == "kitchen, garage"
+
+
+async def test_entity_sends_assist_prompt(
+    hass: Any,
+    transcription_server_factory: Any,
+) -> None:
+    """Assist entity names are sent to the provider like any other prompt."""
+    from homeassistant.components.stt import SpeechResultState
+
+    await setup_assist_exposure(hass)
+    server = await transcription_server_factory([(200, None)])
+    test_entity = entity(hass, url=server.url, prompt="{{ assist_entity_names }}")
+    result = await test_entity.async_process_audio_stream(
+        make_metadata(), fast_stream()
+    )
+    assert result.result is SpeechResultState.SUCCESS
+    assert server.requests[0]["fields"]["prompt"] == ("Living Room Light, Lounge Lamp")
 
 
 async def test_entity_state_bookkeeping(

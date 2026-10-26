@@ -404,7 +404,9 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="whisper",
-            data_schema=_builtin_schema(provider, False),
+            data_schema=self.add_suggested_values_to_schema(
+                _builtin_schema(provider, False), user_input or {}
+            ),
             errors=errors,
             description_placeholders=description_placeholders or None,
         )
@@ -461,7 +463,9 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="custom",
-            data_schema=CUSTOM_SCHEMA,
+            data_schema=self.add_suggested_values_to_schema(
+                CUSTOM_SCHEMA, user_input or {}
+            ),
             errors=errors,
             description_placeholders=description_placeholders or None,
         )

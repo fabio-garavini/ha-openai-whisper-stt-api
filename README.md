@@ -155,6 +155,20 @@ These are the parameters that you can configure:
   {{ states.light | map(attribute='name') | join(', ') }},{{ states.script | map(attribute='name') | join(', ') }}
   ```
 
+  If you use Assist, the integration also provides a ready-made variable with the names **and aliases** of every entity exposed to it. The whole prompt can be just:
+
+  ```yaml
+  {{ assist_entity_names }}
+  ```
+
+  `assist_entities` is available for more advanced templates and contains one item per exposed entity (`entity_id`, `domain` and the list of `names`), so you can filter by domain with normal Jinja:
+
+  ```yaml
+  {% for entity in assist_entities if entity.domain == 'light' %}
+  {{ entity.names | join(', ') }}{% if not loop.last %},{% endif %}
+  {% endfor %}
+  ```
+
   Plain text, templates, or a mix of both all work. Because templates are evaluated at transcription time (not at startup), newly added or renamed entities are picked up automatically, and entities that are not yet set up when the integration loads can never break the prompt. The template syntax is validated when you save the settings, and a template that fails to render is logged and skipped instead of failing the transcription.
 
   **Note**: transcription APIs limit the prompt size (`whisper-1` accepts about 224 tokens, the `gpt-4o-*` models 1024), so keep the generated list focused on the words you actually speak.

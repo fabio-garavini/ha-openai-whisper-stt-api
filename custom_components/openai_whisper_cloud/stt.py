@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import logging
 from collections.abc import AsyncIterable
-from typing import Any
+from typing import Any, Final
 
+from homeassistant.components.homeassistant.const import DATA_EXPOSED_ENTITIES
+from homeassistant.components.homeassistant.exposed_entities import async_should_expose
 from homeassistant.components.stt import (
     AudioBitRates,
     AudioChannels,
@@ -20,6 +22,8 @@ from homeassistant.components.stt import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_KEY, CONF_MODEL, CONF_NAME
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import intent
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.template import Template, TemplateError, is_template_string
@@ -47,6 +51,13 @@ from .whisper_provider import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# The assistant whose exposure settings decide which entities Assist can
+# actually talk about.
+ASSIST_ASSISTANT: Final = "conversation"
+# Template variables made available to prompt templates.
+ASSIST_ENTITY_NAMES: Final = "assist_entity_names"
+ASSIST_ENTITIES: Final = "assist_entities"
+
 
 def resolve_language(language: str | None, supported: list[str]) -> str | None:
     """Map a requested language onto one supported by the model.
@@ -72,6 +83,90 @@ def resolve_language(language: str | None, supported: list[str]) -> str | None:
 
 
 @callback
+def assist_prompt_variables(hass: HomeAssistant) -> dict[str, Any]:
+    """Return template variables describing the entities Assist can control.
+
+    ``assist_entity_names`` is a ready-to-use, comma separated string with
+    every name and alias Assist matches for entities exposed to it, so a
+    prompt can simply be ``{{ assist_entity_names }}``.
+
+    ``assist_entities`` exposes the same information as a list of
+    ``{"entity_id", "domain", "names"}`` dictionaries for templates that
+    need to filter or format the list themselves.
+
+    Home Assistant only exposes entities to Assist; device names are part
+    of the computed entity names for devices that use the entity name, and
+    the entity registry aliases are included as well.
+    """
+    if DATA_EXPOSED_ENTITIES not in hass.data:
+        # The homeassistant component is not set up yet (e.g. in unit tests).
+        return {ASSIST_ENTITY_NAMES: "", ASSIST_ENTITIES: []}
+
+    entity_registry = er.async_get(hass)
+    # Resolves the computed device+entity name on current Home Assistant
+    # versions. Older versions only have the plain string aliases.
+    get_entity_aliases = getattr(intent, "async_get_entity_aliases", None)
+    entities: list[dict[str, Any]] = []
+    prompt_names: list[str] = []
+    seen_prompt_names: set[str] = set()
+
+    for state in hass.states.async_all():
+        if not async_should_expose(hass, ASSIST_ASSISTANT, state.entity_id):
+            continue
+
+        entity_entry = entity_registry.async_get(state.entity_id)
+        names: list[str] = []
+        seen_entity_names: set[str] = set()
+        # Include the state name as well as the registry aliases: aliases
+        # contain the computed device+entity name on current Home Assistant
+        # versions, while the state name covers older entries and custom
+        # names.
+        if get_entity_aliases is not None:
+            aliases = get_entity_aliases(hass, entity_entry, state=state)
+        elif entity_entry is not None:
+            aliases = [
+                alias for alias in entity_entry.aliases if isinstance(alias, str)
+            ]
+        else:
+            aliases = []
+        for name in (state.name, *aliases):
+            name = (name or "").strip()
+            key = name.casefold()
+            if not name or key in seen_entity_names:
+                continue
+            seen_entity_names.add(key)
+            names.append(name)
+
+        if not names:
+            continue
+
+        entities.append(
+            {
+                "entity_id": state.entity_id,
+                "domain": state.domain,
+                "names": names,
+            }
+        )
+        for name in names:
+            key = name.casefold()
+            if key not in seen_prompt_names:
+                seen_prompt_names.add(key)
+                prompt_names.append(name)
+
+    entities.sort(key=lambda entity: entity["entity_id"])
+    prompt_names.sort(key=str.casefold)
+    _LOGGER.debug(
+        "Assist exposes %d entities with %d distinct names/aliases",
+        len(entities),
+        len(prompt_names),
+    )
+    return {
+        ASSIST_ENTITY_NAMES: ", ".join(prompt_names),
+        ASSIST_ENTITIES: entities,
+    }
+
+
+@callback
 def resolve_prompt(hass: HomeAssistant, prompt: str) -> str:
     """Return the prompt to send with a transcription request.
 
@@ -81,14 +176,23 @@ def resolve_prompt(hass: HomeAssistant, prompt: str) -> str:
     which means the prompt always reflects the current state and entity
     names are picked up as soon as they are added or renamed.
 
+    Prompt templates get the ``assist_entity_names`` and ``assist_entities``
+    variables, which describe the entities and aliases exposed to Assist.
+
     A prompt without template syntax is returned unchanged. A template
     that fails to render is logged and skipped instead of failing the
     whole transcription.
     """
     if not prompt or not is_template_string(prompt):
         return prompt
+
+    variables: dict[str, Any] | None = None
+    if ASSIST_ENTITY_NAMES in prompt or ASSIST_ENTITIES in prompt:
+        variables = assist_prompt_variables(hass)
     try:
-        rendered = Template(prompt, hass).async_render(parse_result=False)
+        rendered = Template(prompt, hass).async_render(
+            variables=variables, parse_result=False
+        )
     except TemplateError as err:
         _LOGGER.warning(
             "Transcribing without a prompt because its template failed to render: %s",
